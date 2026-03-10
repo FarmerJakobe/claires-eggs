@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <section class="admin-login card">
+    <p class="eyebrow">Admin</p>
+    <h1>Claire's dashboard</h1>
+    <form method="post">
+      <label>
+        Password
+        <input type="password" name="password" required>
+      </label>
+      <button class="button button-primary" type="submit">Sign in</button>
+    </form>
+  </section>
+{% endblock %}

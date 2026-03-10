@@ -1,0 +1,76 @@
+<svg width="720" height="920" viewBox="0 0 720 920" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cb_outer" x1="87" y1="47" x2="638" y2="884" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EFF3F6"/>
+      <stop offset="1" stop-color="#84919E"/>
+    </linearGradient>
+    <linearGradient id="cb_sky" x1="360" y1="90" x2="360" y2="522" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5CC7FF"/>
+      <stop offset="1" stop-color="#EDF9FF"/>
+    </linearGradient>
+    <linearGradient id="cb_field" x1="130" y1="420" x2="602" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E8428"/>
+      <stop offset="1" stop-color="#A8DA3F"/>
+    </linearGradient>
+    <linearGradient id="cb_horse" x1="255" y1="150" x2="455" y2="510" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD85E"/>
+      <stop offset="0.56" stop-color="#F6B133"/>
+      <stop offset="1" stop-color="#8A3D09"/>
+    </linearGradient>
+    <linearGradient id="cb_mane" x1="365" y1="146" x2="495" y2="428" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF49C"/>
+      <stop offset="0.58" stop-color="#FFCF27"/>
+      <stop offset="1" stop-color="#B15A11"/>
+    </linearGradient>
+    <linearGradient id="cb_banner" x1="126" y1="495" x2="594" y2="595" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D91F1F"/>
+      <stop offset="1" stop-color="#991515"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M360 28C526 28 660 167 660 338V565C660 764 526 892 360 892C194 892 60 764 60 565V338C60 167 194 28 360 28Z" fill="url(#cb_outer)" stroke="#65727E" stroke-width="10"/>
+  <path d="M360 48C515 48 640 176 640 339V562C640 749 514 872 360 872C206 872 80 749 80 562V339C80 176 205 48 360 48Z" fill="#FFFEFA" stroke="#DCE3E8" stroke-width="10"/>
+  <path d="M360 72C502 72 616 190 616 343V556C616 731 501 848 360 848C219 848 104 731 104 556V343C104 190 218 72 360 72Z" fill="#0C5B1B"/>
+  <path d="M360 92C490 92 596 200 596 346V553C596 716 490 824 360 824C230 824 124 716 124 553V346C124 200 230 92 360 92Z" fill="#FDFDF9"/>
+
+  <path d="M124 92H596V455C539 442 484 437 360 437C236 437 181 442 124 455V92Z" fill="url(#cb_sky)"/>
+  <circle cx="200" cy="198" r="50" fill="#F4E14B"/>
+  <path d="M126 456C182 425 224 414 360 414C496 414 538 425 594 456V824H126V456Z" fill="url(#cb_field)"/>
+  <path d="M129 490C201 434 245 415 360 415C475 415 519 434 591 490" stroke="#DCEF5B" stroke-width="16" stroke-linecap="round"/>
+  <path d="M138 545C223 482 258 468 360 468C462 468 497 482 582 545" stroke="#B5E13E" stroke-width="12" stroke-linecap="round"/>
+
+  <path d="M477 304L554 260L592 320V438H477V304Z" fill="#E34B28"/>
+  <path d="M529 260H569L606 313H566L529 260Z" fill="#263747"/>
+  <rect x="503" y="322" width="45" height="45" fill="#F8FBFF"/>
+  <path d="M525.5 322V367M503 344.5H548" stroke="#263747" stroke-width="5"/>
+  <rect x="508" y="377" width="55" height="61" fill="#FFF4E0"/>
+  <path d="M535.5 377V438M508 407.5H563" stroke="#7A5230" stroke-width="5"/>
+
+  <path d="M247 368C247 266 307 175 405 175C461 175 506 213 523 268C533 300 535 332 525 362C508 421 469 492 406 492C355 492 315 473 287 442C263 416 247 406 247 368Z" fill="url(#cb_horse)" stroke="#5E2402" stroke-width="11"/>
+  <path d="M313 170L344 112L367 201L313 170Z" fill="#F7A51E" stroke="#5E2402" stroke-width="11"/>
+  <path d="M383 169L414 113L438 204L383 169Z" fill="#F7A51E" stroke="#5E2402" stroke-width="11"/>
+  <path d="M345 176C373 180 394 199 406 227C379 212 353 214 317 232L267 265C288 232 310 200 345 176Z" fill="url(#cb_mane)" stroke="#A24E0E" stroke-width="9"/>
+  <path d="M406 185C449 226 471 292 464 371C452 344 433 312 405 284Z" fill="url(#cb_mane)" stroke="#A24E0E" stroke-width="9"/>
+  <path d="M390 280C417 262 458 268 475 298C485 316 482 338 466 352C449 367 429 367 414 356" fill="#FAD04B"/>
+  <circle cx="408" cy="306" r="30" fill="#FFFFFF"/>
+  <circle cx="412" cy="310" r="22" fill="#151B24"/>
+  <circle cx="419" cy="302" r="6" fill="#FFFFFF"/>
+  <path d="M284 340C294 360 292 383 279 396L249 359L284 340Z" fill="#5E2402"/>
+  <path d="M308 215C340 199 378 201 400 221" stroke="#FFF17A" stroke-width="15" stroke-linecap="round"/>
+  <path d="M311 382C323 367 346 367 359 382" stroke="#5E2402" stroke-width="10" stroke-linecap="round"/>
+
+  <path d="M147 512C180 500 209 497 262 499H567C581 499 593 510 595 524L605 581C608 597 596 611 580 611H179C164 611 151 600 149 585L140 525C139 519 142 514 147 512Z" fill="url(#cb_banner)" stroke="#0D2B65" stroke-width="10"/>
+  <text x="174" y="585" fill="#F8FAFF" font-family="Cooper Black, Georgia, serif" font-size="116" font-weight="900" letter-spacing="2">CLAIRE'S</text>
+  <text x="278" y="685" fill="#F6DE47" font-family="Cooper Black, Georgia, serif" font-size="86" font-weight="900" letter-spacing="2">EGGS</text>
+
+  <ellipse cx="185" cy="741" rx="51" ry="60" fill="#F4BF55"/>
+  <ellipse cx="257" cy="728" rx="54" ry="64" fill="#F7CF71"/>
+  <ellipse cx="331" cy="747" rx="55" ry="64" fill="#F4BF55"/>
+  <ellipse cx="408" cy="734" rx="56" ry="66" fill="#F8D36E"/>
+  <ellipse cx="487" cy="748" rx="54" ry="62" fill="#D08B34"/>
+  <path d="M325 760C336 746 360 746 372 760C355 780 340 786 325 760Z" fill="#FFF7E9" stroke="#7A5230" stroke-width="5"/>
+  <path d="M335 760C341 769 349 774 359 776" stroke="#7A5230" stroke-width="5" stroke-linecap="round"/>
+
+  <path d="M184 788C250 821 468 821 534 788L550 836C475 872 244 872 168 836L184 788Z" fill="#178532" stroke="#0C5B1B" stroke-width="6"/>
+  <text x="176" y="851" fill="#F8FAFF" font-family="Cooper Black, Georgia, serif" font-size="60" font-weight="900">FARM-FRESH</text>
+</svg>

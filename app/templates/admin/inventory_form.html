@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Edit" if item else "New" }} Inventory | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <section class="admin-form card">
+    <p class="eyebrow">Inventory</p>
+    <h1>{{ "Edit item" if item else "Add a new carton" }}</h1>
+    <form method="post">
+      <div class="form-grid">
+        <label>
+          Name
+          <input type="text" name="name" value="{{ item.name if item else '' }}" required>
+        </label>
+        <label>
+          Unit label
+          <input type="text" name="unit_label" value="{{ item.unit_label if item else '' }}" required>
+        </label>
+        <label>
+          Price in cents
+          <input type="number" min="0" name="price_cents" value="{{ item.price_cents if item else '0' }}" required>
+        </label>
+        <label>
+          Available quantity
+          <input type="number" min="0" name="quantity_available" value="{{ item.quantity_available if item else '0' }}" required>
+        </label>
+        <label>
+          Display order
+          <input type="number" min="0" name="display_order" value="{{ item.display_order if item else '0' }}" required>
+        </label>
+        <label>
+          Stock update note
+          <input type="text" name="stock_reason" value="Harvest update">
+        </label>
+      </div>
+      <label>
+        Description
+        <textarea name="description" rows="5" required>{{ item.description if item else '' }}</textarea>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" name="is_active" value="1" {% if not item or item.is_active %}checked{% endif %}>
+        Show this item on the public orders page
+      </label>
+      <div class="form-actions">
+        <button class="button button-primary" type="submit">Save item</button>
+        <a class="button button-secondary" href="{{ url_for('admin_dashboard') }}">Back</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

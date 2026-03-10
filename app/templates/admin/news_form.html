@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Edit" if post else "New" }} Post | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <section class="admin-form card">
+    <p class="eyebrow">News</p>
+    <h1>{{ "Edit post" if post else "Create announcement" }}</h1>
+    <form method="post">
+      <label>
+        Title
+        <input type="text" name="title" value="{{ post.title if post else '' }}" required>
+      </label>
+      <label>
+        Excerpt
+        <textarea name="excerpt" rows="3">{{ post.excerpt if post else '' }}</textarea>
+      </label>
+      <label>
+        Body
+        <textarea name="body" rows="10" required>{{ post.body if post else '' }}</textarea>
+      </label>
+      <label>
+        Facebook copy
+        <textarea name="facebook_message" rows="4">{{ post.facebook_message if post else '' }}</textarea>
+      </label>
+      <div class="checkbox-grid">
+        <label class="checkbox-row">
+          <input type="checkbox" name="is_published" value="1" {% if post and post.is_published %}checked{% endif %}>
+          Publish on the website
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" name="publish_to_facebook" value="1" {% if post and post.publish_to_facebook %}checked{% endif %}>
+          Queue for Facebook too
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="button button-primary" type="submit">Save post</button>
+        <a class="button button-secondary" href="{{ url_for('admin_dashboard') }}">Back</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

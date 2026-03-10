@@ -1,0 +1,48 @@
+<svg width="1200" height="620" viewBox="0 0 1200 620" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ms_sky" x1="600" y1="30" x2="600" y2="390" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#62C9FF"/>
+      <stop offset="1" stop-color="#EAF8FF"/>
+    </linearGradient>
+    <linearGradient id="ms_field" x1="85" y1="260" x2="1120" y2="570" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E8428"/>
+      <stop offset="1" stop-color="#A6D93D"/>
+    </linearGradient>
+    <linearGradient id="ms_card" x1="720" y1="130" x2="1090" y2="490" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF7"/>
+      <stop offset="1" stop-color="#F2E5C7"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="18" y="18" width="1164" height="584" rx="42" fill="#FFF9ED" stroke="#D9D2C4" stroke-width="8"/>
+  <path d="M36 36H1164V366C1040 336 925 322 600 322C275 322 160 336 36 366V36Z" fill="url(#ms_sky)"/>
+  <circle cx="190" cy="150" r="66" fill="#F4E14B"/>
+  <path d="M36 366C164 299 252 279 600 279C948 279 1036 299 1164 366V584H36V366Z" fill="url(#ms_field)"/>
+  <path d="M45 410C225 277 319 245 600 245C881 245 975 277 1155 410" stroke="#DCEF5B" stroke-width="26" stroke-linecap="round"/>
+  <path d="M61 478C275 330 347 306 600 306C853 306 925 330 1139 478" stroke="#B5E13E" stroke-width="18" stroke-linecap="round"/>
+
+  <path d="M791 238L935 157L1007 270V431H791V238Z" fill="#E34B28"/>
+  <path d="M890 157H963L1030 253H957L890 157Z" fill="#263747"/>
+  <rect x="839" y="275" width="74" height="74" fill="#F8FBFF"/>
+  <path d="M876 275V349M839 312H913" stroke="#263747" stroke-width="7"/>
+  <rect x="850" y="365" width="88" height="66" fill="#FFF4E0"/>
+  <path d="M894 365V431M850 398H938" stroke="#7A5230" stroke-width="7"/>
+
+  <g transform="translate(96 114)">
+    <rect x="0" y="0" width="390" height="390" rx="74" fill="url(#ms_card)" stroke="#CFC6B2" stroke-width="8"/>
+    <rect x="22" y="22" width="346" height="346" rx="58" fill="#0C5B1B"/>
+    <rect x="36" y="36" width="318" height="318" rx="48" fill="#FDFDF9"/>
+    <path d="M36 36H354V194C320 186 286 183 195 183C104 183 70 186 36 194V36Z" fill="url(#ms_sky)"/>
+    <circle cx="101" cy="96" r="34" fill="#F4E14B"/>
+    <path d="M36 196C77 174 104 167 195 167C286 167 313 174 354 196V354H36V196Z" fill="url(#ms_field)"/>
+    <path d="M39 212C111 160 136 149 195 149C254 149 279 160 351 212" stroke="#DCEF5B" stroke-width="9" stroke-linecap="round"/>
+    <path d="M230 136L277 109L299 145V196H230V136Z" fill="#E34B28"/>
+    <path d="M154 209C154 133 198 67 272 67C312 67 344 96 357 136C364 159 365 181 358 204C346 249 318 307 273 307C236 307 208 293 188 271C171 253 154 241 154 209Z" fill="url(#ms_card)" stroke="#7A5230" stroke-width="7"/>
+    <path d="M200 62L224 19L240 85L200 62Z" fill="#F7A51E" stroke="#5E2402" stroke-width="7"/>
+    <path d="M252 61L274 20L291 86L252 61Z" fill="#F7A51E" stroke="#5E2402" stroke-width="7"/>
+    <circle cx="274" cy="172" r="22" fill="#FFFFFF"/>
+    <circle cx="277" cy="175" r="15" fill="#151B24"/>
+    <path d="M186 116C210 104 239 105 257 120" stroke="#FFF17A" stroke-width="11" stroke-linecap="round"/>
+    <path d="M191 230C201 218 219 218 228 230" stroke="#5E2402" stroke-width="7" stroke-linecap="round"/>
+  </g>
+</svg>

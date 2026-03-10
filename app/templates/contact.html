@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Contact | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <section class="page-intro">
+    <p class="eyebrow">Contact</p>
+    <h1>Reach Claire before market day.</h1>
+    <p>
+      Use this page for order questions, special requests, or updates about pickup. Messages are stored in the admin dashboard.
+    </p>
+  </section>
+
+  <section class="section-grid">
+    <article class="card card-warm">
+      <img
+        class="section-illustration"
+        src="{{ url_for('static', filename='images/claire-icon.png', v='20260310f') }}"
+        alt="Claire's Eggs square badge"
+      >
+      <h2>Pickup details</h2>
+      <p>Hitching Post</p>
+      <p>Crawford, Colorado</p>
+      <p>{{ pickup_window.date_label }}</p>
+      <p>{{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</p>
+    </article>
+
+    <form class="card contact-form" method="post">
+      <h2>Send a message</h2>
+      <label>
+        Name
+        <input type="text" name="name" required>
+      </label>
+      <label>
+        Email
+        <input type="email" name="email" required>
+      </label>
+      <label>
+        Phone
+        <input type="tel" name="phone" required>
+      </label>
+      <label>
+        Message
+        <textarea name="message" rows="6" required></textarea>
+      </label>
+      <button class="button button-primary" type="submit">Send message</button>
+    </form>
+  </section>
+{% endblock %}

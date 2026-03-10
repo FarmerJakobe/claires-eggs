@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Claire's Farm Eggs{% endblock %}</title>
+    <meta
+      name="description"
+      content="Reserve fresh farm eggs for Wednesday pickup at the Hitching Post in Crawford, Colorado."
+    >
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png', v='20260310h') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="brand-lockup">
+          <a class="brand-mark" href="{{ url_for('home') }}">
+            <img
+              class="brand-icon"
+              src="{{ url_for('static', filename='images/favicon.png', v='20260310h') }}"
+              alt="Claire's Eggs horse icon"
+            >
+            <span>
+              Claire's Eggs
+              <small>Farm-fresh pickup in Crawford</small>
+            </span>
+          </a>
+        </div>
+        <nav class="site-nav">
+          <a href="{{ url_for('home') }}">Home</a>
+          <a href="{{ url_for('orders') }}">Orders</a>
+          <a href="{{ url_for('news') }}">News</a>
+          <a href="{{ url_for('contact') }}">Contact</a>
+          <a href="{{ url_for('admin_dashboard') if session.get('is_admin') else url_for('admin_login') }}">Admin</a>
+        </nav>
+      </header>
+
+      <div class="ticker">
+        <span>Next pickup:</span>
+        <strong>{{ pickup_window.date_label }}</strong>
+        <span>{{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</span>
+        <span>Hitching Post, Crawford, Colorado</span>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <main>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+Flask==2.3.3
+stripe==12.5.1
+tzdata==2025.2
+backports.zoneinfo==0.2.1; python_version < "3.9"
+gunicorn==23.0.0
+waitress==3.0.2

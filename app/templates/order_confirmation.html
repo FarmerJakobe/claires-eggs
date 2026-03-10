@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Order #{{ order.id }} | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <section class="page-intro">
+    <p class="eyebrow">Order confirmed</p>
+    <h1>Order #{{ order.id }} is on Claire's market list.</h1>
+    <p>
+      Pickup is scheduled for <strong>{{ order.pickup_date }}</strong> during
+      <strong>{{ order.pickup_window }}</strong> at the Hitching Post in Crawford.
+    </p>
+  </section>
+
+  <section class="section-grid">
+    <article class="card">
+      <h2>Reserved for</h2>
+      <p>{{ order.customer_name }}</p>
+      <p>{{ order.email }}</p>
+      <p>{{ order.phone }}</p>
+      <p>{{ order.notes or "No special notes." }}</p>
+    </article>
+    <article class="card card-cool">
+      <h2>Payment</h2>
+      <p>Method: {{ order.payment_method|title }}</p>
+      <p>Status: {{ order.payment_status.replace('_', ' ')|title }}</p>
+      <p>Subtotal: {{ order.subtotal_cents|money }}</p>
+      <p>Fee: {{ order.fee_cents|money }}</p>
+      <p><strong>Total: {{ order.total_cents|money }}</strong></p>
+      {% if order.stripe_checkout_url %}
+        <p><a class="button button-primary" href="{{ order.stripe_checkout_url }}">Open Stripe Checkout</a></p>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Reserved cartons</p>
+        <h2>What Claire is holding for you</h2>
+      </div>
+      <img
+        class="mini-illustration"
+        src="{{ url_for('static', filename='images/favicon.png', v='20260310h') }}"
+        alt="Claire's Eggs horse icon"
+      >
+    </div>
+    <div class="inventory-list">
+      {% for item in items %}
+        <div class="inventory-card">
+          <div>
+            <h3>{{ item.inventory_name }}</h3>
+            <p>{{ item.quantity }} x {{ item.unit_price_cents|money }}</p>
+          </div>
+          <div class="inventory-meta">
+            <strong>{{ item.line_total_cents|money }}</strong>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

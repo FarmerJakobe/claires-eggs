@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <section class="page-intro admin-intro">
+    <div>
+      <p class="eyebrow">Admin dashboard</p>
+      <h1>Inventory, orders, news, and customer messages.</h1>
+    </div>
+    <form method="post" action="{{ url_for('admin_logout') }}">
+      <button class="button button-secondary" type="submit">Log out</button>
+    </form>
+  </section>
+
+  <section class="admin-grid">
+    <article class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Inventory</p>
+          <h2>Current stock</h2>
+        </div>
+        <a class="button button-secondary" href="{{ url_for('admin_inventory_new') }}">Add item</a>
+      </div>
+      <div class="table-stack">
+        {% for item in inventory %}
+          <div class="admin-row">
+            <div>
+              <strong>{{ item.name }}</strong>
+              <p>{{ item.quantity_available }} available · {{ item.price_cents|money }} · {{ "Active" if item.is_active else "Hidden" }}</p>
+            </div>
+            <a class="text-link" href="{{ url_for('admin_inventory_edit', item_id=item.id) }}">Edit</a>
+          </div>
+        {% else %}
+          <p>No inventory items yet.</p>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Orders</p>
+          <h2>Recent reservations</h2>
+        </div>
+      </div>
+      <div class="table-stack">
+        {% for order in orders %}
+          <div class="admin-row order-row">
+            <div>
+              <strong>#{{ order.id }} · {{ order.customer_name }}</strong>
+              <p>{{ order.payment_method|title }} · {{ order.payment_status.replace('_', ' ')|title }} · {{ order.total_cents|money }}</p>
+              <p>
+                {% for item in order_items.get(order.id, []) %}
+                  {{ item.quantity }}x {{ item.inventory_name }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              </p>
+            </div>
+            <form method="post" action="{{ url_for('admin_order_status', order_id=order.id) }}">
+              <select name="order_status">
+                {% for status in ["open", "picked_up", "cancelled"] %}
+                  <option value="{{ status }}" {% if order.order_status == status %}selected{% endif %}>{{ status.replace('_', ' ')|title }}</option>
+                {% endfor %}
+              </select>
+              <button class="button button-secondary" type="submit">Update</button>
+            </form>
+          </div>
+        {% else %}
+          <p>No orders yet.</p>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">News</p>
+          <h2>Announcements</h2>
+        </div>
+        <a class="button button-secondary" href="{{ url_for('admin_news_new') }}">New post</a>
+      </div>
+      <div class="table-stack">
+        {% for post in posts %}
+          <div class="admin-row">
+            <div>
+              <strong>{{ post.title }}</strong>
+              <p>{{ "Published" if post.is_published else "Draft" }} · Facebook: {{ post.facebook_status.replace('-', ' ')|title }}</p>
+            </div>
+            <div class="admin-actions">
+              <a class="text-link" href="{{ url_for('admin_news_edit', post_id=post.id) }}">Edit</a>
+              <form method="post" action="{{ url_for('admin_news_facebook', post_id=post.id) }}">
+                <button class="text-button" type="submit">Sync Facebook</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <p>No posts yet.</p>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Messages</p>
+          <h2>Contact inbox</h2>
+        </div>
+      </div>
+      <div class="table-stack">
+        {% for message in messages %}
+          <div class="admin-row message-row">
+            <div>
+              <strong>{{ message.name }}</strong>
+              <p>{{ message.email }} · {{ message.phone }}</p>
+              <p>{{ message.message }}</p>
+            </div>
+          </div>
+        {% else %}
+          <p>No messages yet.</p>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% endblock %}

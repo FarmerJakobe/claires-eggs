@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Orders | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <section class="page-intro">
+    <p class="eyebrow">Orders</p>
+    <h1>Reserve this week's stock before somebody else does.</h1>
+    <p>
+      All cartons listed here are for pickup at the Hitching Post in Crawford on
+      <strong>{{ pickup_window.date_label }}</strong> from
+      <strong>{{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</strong>.
+    </p>
+  </section>
+
+  <section class="order-layout">
+    <form class="card order-form" method="post" data-order-form>
+      <h2>Select cartons</h2>
+      <div class="product-picker">
+        {% for item in inventory %}
+          <div class="product-row" data-price-cents="{{ item.price_cents }}">
+            <div>
+              <h3>{{ item.name }}</h3>
+              <p>{{ item.description }}</p>
+              <span class="stock-pill">{{ item.quantity_available }} left</span>
+            </div>
+            <div class="product-controls">
+              <span class="price">{{ item.price_cents|money }}</span>
+              <label>
+                Quantity
+                <input
+                  type="number"
+                  min="0"
+                  max="{{ item.quantity_available }}"
+                  name="item_{{ item.id }}"
+                  value="0"
+                  data-quantity
+                >
+              </label>
+            </div>
+          </div>
+        {% else %}
+          <p>Claire is sold out right now. Check back after the next harvest update.</p>
+        {% endfor %}
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Your name
+          <input type="text" name="customer_name" required>
+        </label>
+        <label>
+          Email
+          <input type="email" name="email" required>
+        </label>
+        <label>
+          Phone
+          <input type="tel" name="phone" required>
+        </label>
+      </div>
+
+      <fieldset class="payment-choice">
+        <legend>Payment method</legend>
+        <label>
+          <input type="radio" name="payment_method" value="cash" checked data-payment-option>
+          Reserve with cash at pickup
+        </label>
+        <label>
+          <input type="radio" name="payment_method" value="card" data-payment-option>
+          Pay by card online (+10%)
+        </label>
+      </fieldset>
+
+      <label>
+        Notes for Claire
+        <textarea name="notes" rows="4" placeholder="Optional pickup notes or carton requests"></textarea>
+      </label>
+
+      <button class="button button-primary" type="submit">Place order</button>
+    </form>
+
+    <aside class="card order-summary" data-order-summary>
+      <img
+        class="summary-logo"
+        src="{{ url_for('static', filename='images/claire-logo.png', v='20260310f') }}"
+        alt="Claire's Eggs official logo"
+      >
+      <p class="eyebrow">Pickup summary</p>
+      <h2>{{ pickup_window.date_label }}</h2>
+      <p class="pickup-window">{{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</p>
+      <p>Hitching Post, Crawford, Colorado</p>
+      <dl class="totals">
+        <div>
+          <dt>Subtotal</dt>
+          <dd data-subtotal>$0.00</dd>
+        </div>
+        <div>
+          <dt>Card fee</dt>
+          <dd data-fee>$0.00</dd>
+        </div>
+        <div class="total-row">
+          <dt>Total</dt>
+          <dd data-total>$0.00</dd>
+        </div>
+      </dl>
+      <p class="summary-note">
+        {% if payment_mode == "demo" %}
+          Card orders run in local demo mode for this prototype. Cash orders reserve stock and are paid in person.
+        {% else %}
+          Card orders continue into Stripe Checkout. Cash orders reserve stock for in-person pickup.
+        {% endif %}
+      </p>
+    </aside>
+  </section>
+{% endblock %}

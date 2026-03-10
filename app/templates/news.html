@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}News | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <section class="page-intro">
+    <p class="eyebrow">News</p>
+    <h1>Announcements from the farm, posted here first.</h1>
+    <p>
+      Claire can publish updates on the website and then mirror the same message into Facebook from the admin dashboard.
+    </p>
+  </section>
+
+  <section class="post-list">
+    {% for post in posts %}
+      <article class="card post-card">
+        <span class="post-date">{{ post.published_at[:10] if post.published_at else post.created_at[:10] }}</span>
+        <h2>{{ post.title }}</h2>
+        <p>{{ post.excerpt }}</p>
+        <a class="text-link" href="{{ url_for('news_detail', slug=post.slug) }}">Read more</a>
+      </article>
+    {% else %}
+      <article class="card">
+        <h2>No news yet</h2>
+        <p>Claire has not posted any announcements yet.</p>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}

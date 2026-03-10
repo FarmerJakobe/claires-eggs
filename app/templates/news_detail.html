@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <article class="card article-shell">
+    <p class="eyebrow">Announcement</p>
+    <h1>{{ post.title }}</h1>
+    <p class="post-date">{{ post.published_at[:10] if post.published_at else post.created_at[:10] }}</p>
+    <div class="article-body">{{ post.body|nl2br|safe }}</div>
+  </article>
+{% endblock %}

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: claires-eggs
+    runtime: python
+    region: ohio
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app
+    healthCheckPath: /healthz
+    envVars:
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: CLAIRE_ADMIN_PASSWORD
+        sync: false
+      - key: DATABASE_PATH
+        value: /var/data/claire_eggs.db
+      - key: PAYMENT_MODE
+        value: demo
+      - key: FACEBOOK_SYNC_MODE
+        value: demo
+      - key: SITE_URL
+        sync: false
+    disk:
+      name: claires-eggs-data
+      mountPath: /var/data
+      sizeGB: 1

@@ -1,0 +1,61 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ci_frame" x1="54" y1="40" x2="458" y2="472" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F3F6F8"/>
+      <stop offset="1" stop-color="#82919F"/>
+    </linearGradient>
+    <linearGradient id="ci_sky" x1="256" y1="76" x2="256" y2="316" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#56C7FF"/>
+      <stop offset="1" stop-color="#EAF8FF"/>
+    </linearGradient>
+    <linearGradient id="ci_field" x1="86" y1="255" x2="430" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E8428"/>
+      <stop offset="1" stop-color="#A6D93D"/>
+    </linearGradient>
+    <linearGradient id="ci_horse" x1="178" y1="119" x2="334" y2="384" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD85E"/>
+      <stop offset="0.56" stop-color="#F6B133"/>
+      <stop offset="1" stop-color="#8A3D09"/>
+    </linearGradient>
+    <linearGradient id="ci_mane" x1="266" y1="120" x2="369" y2="336" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF49C"/>
+      <stop offset="0.58" stop-color="#FFCF27"/>
+      <stop offset="1" stop-color="#B15A11"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="36" y="36" width="440" height="440" rx="78" fill="url(#ci_frame)" stroke="#65727E" stroke-width="8"/>
+  <rect x="56" y="56" width="400" height="400" rx="64" fill="#FFFEFA" stroke="#D9E0E5" stroke-width="8"/>
+  <rect x="72" y="72" width="368" height="368" rx="54" fill="#0C5B1B"/>
+  <rect x="84" y="84" width="344" height="344" rx="46" fill="#FDFDF9"/>
+
+  <path d="M84 84H428V272C387 261 347 256 256 256C165 256 125 261 84 272V84Z" fill="url(#ci_sky)"/>
+  <circle cx="150" cy="150" r="42" fill="#F4E14B"/>
+  <path d="M85 274C137 246 173 237 256 237C339 237 375 246 427 274V428H85V274Z" fill="url(#ci_field)"/>
+  <path d="M88 296C154 245 190 228 256 228C322 228 358 245 424 296" stroke="#DCEF5B" stroke-width="14" stroke-linecap="round"/>
+  <path d="M94 327C168 273 198 261 256 261C314 261 344 273 418 327" stroke="#B2E13C" stroke-width="10" stroke-linecap="round"/>
+
+  <path d="M343 190L394 160L420 202V272H343V190Z" fill="#E34B28"/>
+  <path d="M378 160H404L431 199H405L378 160Z" fill="#263747"/>
+  <rect x="360" y="203" width="34" height="34" fill="#F8FBFF"/>
+  <path d="M377 203V237M360 220H394" stroke="#263747" stroke-width="4"/>
+  <rect x="364" y="243" width="42" height="29" fill="#FFF4E0"/>
+  <path d="M385 243V272M364 257.5H406" stroke="#7A5230" stroke-width="4"/>
+
+  <path d="M159 290C159 199 213 116 301 116C351 116 391 151 407 201C416 230 418 258 409 285C394 340 359 405 303 405C258 405 222 388 197 360C175 334 159 325 159 290Z" fill="url(#ci_horse)" stroke="#5E2402" stroke-width="9"/>
+  <path d="M220 110L249 56L269 138L220 110Z" fill="#F7A51E" stroke="#5E2402" stroke-width="9"/>
+  <path d="M282 109L309 57L329 140L282 109Z" fill="#F7A51E" stroke="#5E2402" stroke-width="9"/>
+  <path d="M247 116C272 120 290 135 300 156C277 143 255 144 225 159L184 186C202 159 221 136 247 116Z" fill="url(#ci_mane)" stroke="#A24E0E" stroke-width="7"/>
+  <path d="M299 124C335 160 353 217 347 285C337 262 321 238 298 214Z" fill="url(#ci_mane)" stroke="#A24E0E" stroke-width="7"/>
+  <path d="M286 210C309 194 343 199 357 225C365 241 363 259 349 271C335 283 318 283 306 274" fill="#FAD04B"/>
+  <circle cx="301" cy="230" r="28" fill="#FFFFFF"/>
+  <circle cx="305" cy="233" r="20" fill="#151B24"/>
+  <circle cx="311" cy="226" r="6" fill="#FFFFFF"/>
+  <path d="M194 267C203 284 201 304 190 315L164 283L194 267Z" fill="#5E2402"/>
+  <path d="M215 148C242 134 274 136 293 153" stroke="#FFF17A" stroke-width="14" stroke-linecap="round"/>
+  <path d="M217 302C228 289 248 289 259 302" stroke="#5E2402" stroke-width="9" stroke-linecap="round"/>
+  <path d="M177 355L221 286L233 428H173L177 355Z" fill="#E39B20" stroke="#5E2402" stroke-width="9"/>
+
+  <path d="M123 125L129 111L135 125L149 131L135 137L129 151L123 137L109 131L123 125Z" fill="#F8FEFF"/>
+  <path d="M390 125L396 111L402 125L416 131L402 137L396 151L390 137L376 131L390 125Z" fill="#F8FEFF"/>
+</svg>
