@@ -37,7 +37,7 @@ Local-first prototype for Claire's egg sales website. The app manages inventory,
 
 5. Open `http://127.0.0.1:5000`.
 
-The app now targets Python 3.8+ so it can run on Gandi Web Hosting, while still working locally on newer Python versions.
+The app now targets Python 3.11 for local work and Render deployment.
 
 ## Admin login
 
