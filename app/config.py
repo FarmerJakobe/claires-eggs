@@ -15,11 +15,15 @@ def card_payments_enabled(config: dict) -> bool:
 
 
 def load_config() -> dict:
+    database_path = Path(
+        os.environ.get("DATABASE_PATH", str(INSTANCE_DIR / "claire_eggs.db"))
+    )
     return {
         "SECRET_KEY": os.environ.get("FLASK_SECRET_KEY", "claire-farm-eggs-secret"),
         "ADMIN_PASSWORD": os.environ.get("CLAIRE_ADMIN_PASSWORD", "claire-eggs-demo"),
-        "DATABASE_PATH": os.environ.get(
-            "DATABASE_PATH", str(INSTANCE_DIR / "claire_eggs.db")
+        "DATABASE_PATH": str(database_path),
+        "RECEIPTS_UPLOAD_DIR": os.environ.get(
+            "RECEIPTS_UPLOAD_DIR", str(database_path.parent / "receipts")
         ),
         "SITE_URL": os.environ.get("SITE_URL", "").rstrip("/"),
         "PAYMENT_MODE": os.environ.get("PAYMENT_MODE", "demo").lower(),
@@ -29,4 +33,9 @@ def load_config() -> dict:
         "FACEBOOK_GROUP_ID": os.environ.get("FACEBOOK_GROUP_ID", ""),
         "FACEBOOK_ACCESS_TOKEN": os.environ.get("FACEBOOK_ACCESS_TOKEN", ""),
         "PREFERRED_URL_SCHEME": os.environ.get("PREFERRED_URL_SCHEME", "https"),
+        "MAX_CONTENT_LENGTH": int(
+            os.environ.get("MAX_CONTENT_LENGTH_MB", "8")
+        )
+        * 1024
+        * 1024,
     }

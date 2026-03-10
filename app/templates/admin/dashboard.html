@@ -6,14 +6,219 @@
   <section class="page-intro admin-intro">
     <div>
       <p class="eyebrow">Admin dashboard</p>
-      <h1>Inventory, orders, news, and customer messages.</h1>
+      <h1>Inventory, orders, customer traffic, and farm finances.</h1>
+      <p class="hero-text">
+        Claire can update stock, see how many people are visiting the site, log in-person sales,
+        and attach receipts so production costs stay visible.
+      </p>
     </div>
     <form method="post" action="{{ url_for('admin_logout') }}">
       <button class="button button-secondary" type="submit">Log out</button>
     </form>
   </section>
 
+  <section class="metrics-grid">
+    <article class="metric-card">
+      <span class="metric-label">Website orders on the books</span>
+      <strong class="metric-value">{{ financial_summary.website_revenue_cents|money }}</strong>
+      <span class="summary-note">{{ financial_summary.website_order_count }} website orders not cancelled</span>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Manual sales logged</span>
+      <strong class="metric-value">{{ financial_summary.manual_sales_cents|money }}</strong>
+      <span class="summary-note">{{ financial_summary.manual_sales_count }} sale entries added by Claire</span>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Production costs</span>
+      <strong class="metric-value">{{ financial_summary.expense_cents|money }}</strong>
+      <span class="summary-note">{{ financial_summary.expense_count }} receipts or expense entries</span>
+    </article>
+    <article class="metric-card metric-card-accent">
+      <span class="metric-label">Net after costs</span>
+      <strong class="metric-value">{{ financial_summary.net_revenue_cents|money }}</strong>
+      <span class="summary-note">Website orders plus manual sales, minus expenses</span>
+    </article>
+  </section>
+
   <section class="admin-grid">
+    <article class="card card-span-2">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Traffic</p>
+          <h2>Website visitor activity</h2>
+        </div>
+        <p class="summary-note">Last 14 days of public page traffic.</p>
+      </div>
+      <div class="analytics-layout">
+        <div>
+          {% if visit_chart_max > 0 %}
+            <div class="traffic-chart" aria-label="Website visitor chart">
+              {% for day in visit_days %}
+                <div class="chart-column">
+                  <div class="chart-bars">
+                    <span
+                      class="chart-bar chart-bar-pageviews"
+                      title="{{ day.label }}: {{ day.page_views }} page views"
+                      style="height: {{ ((day.page_views / visit_chart_max) * 100)|round(0, 'ceil') }}%;"
+                    ></span>
+                    <span
+                      class="chart-bar chart-bar-unique"
+                      title="{{ day.label }}: {{ day.unique_visitors }} unique visitors"
+                      style="height: {{ ((day.unique_visitors / visit_chart_max) * 100)|round(0, 'ceil') }}%;"
+                    ></span>
+                  </div>
+                  <span class="chart-label">{{ day.label }}</span>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="chart-legend">
+              <span><i class="legend-swatch legend-pageviews"></i> Page views</span>
+              <span><i class="legend-swatch legend-unique"></i> Unique visitors</span>
+            </div>
+          {% else %}
+            <p class="summary-note">Traffic will appear here as people browse the public site.</p>
+          {% endif %}
+        </div>
+        <div class="table-stack">
+          <div>
+            <h3>Most visited pages</h3>
+            <p class="summary-note">Last 30 days.</p>
+          </div>
+          {% for page in popular_pages %}
+            <div class="admin-row ledger-row">
+              <div>
+                <strong>{{ page.label }}</strong>
+                <p>{{ page.path }}</p>
+              </div>
+              <div class="ledger-values">
+                <strong>{{ page.page_views }}</strong>
+                <span class="metric-label">{{ page.unique_visitors }} unique</span>
+              </div>
+            </div>
+          {% else %}
+            <p>No page visits recorded yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Sales log</p>
+          <h2>Log money from a sale</h2>
+        </div>
+      </div>
+      <form class="stack-form" method="post" action="{{ url_for('admin_sales_new') }}">
+        <div class="form-grid">
+          <label>
+            Sale name
+            <input type="text" name="title" placeholder="Wednesday market cash sales" required>
+          </label>
+          <label>
+            Date
+            <input type="date" name="sale_date" value="{{ today }}" required>
+          </label>
+          <label>
+            Amount
+            <input type="number" name="amount" min="0.01" step="0.01" placeholder="0.00" required>
+          </label>
+          <label>
+            Payment type
+            <select name="payment_method">
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          Notes
+          <textarea name="notes" rows="3" placeholder="What this sale covered, carton count, or customer note"></textarea>
+        </label>
+        <div class="form-actions">
+          <span class="summary-note">Use this for in-person market sales or any sale not already captured by the website.</span>
+          <button class="button button-primary" type="submit">Log sale</button>
+        </div>
+      </form>
+      <div class="table-stack">
+        {% for sale in sales_entries %}
+          <div class="admin-row ledger-row">
+            <div>
+              <strong>{{ sale.title }}</strong>
+              <p>{{ sale.sale_date|pretty_date }} | {{ sale.payment_method|title }}</p>
+              {% if sale.notes %}
+                <p>{{ sale.notes }}</p>
+              {% endif %}
+            </div>
+            <strong class="price">{{ sale.amount_cents|money }}</strong>
+          </div>
+        {% else %}
+          <p>No manual sales logged yet.</p>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Expenses</p>
+          <h2>Track receipts and costs</h2>
+        </div>
+      </div>
+      <form class="stack-form" method="post" action="{{ url_for('admin_expenses_new') }}" enctype="multipart/form-data">
+        <div class="form-grid">
+          <label>
+            Vendor
+            <input type="text" name="vendor" placeholder="Feed store" required>
+          </label>
+          <label>
+            Category
+            <input type="text" name="category" placeholder="Feed, cartons, bedding, market fee" required>
+          </label>
+          <label>
+            Date
+            <input type="date" name="expense_date" value="{{ today }}" required>
+          </label>
+          <label>
+            Amount
+            <input type="number" name="amount" min="0.01" step="0.01" placeholder="0.00" required>
+          </label>
+        </div>
+        <label>
+          Notes
+          <textarea name="notes" rows="3" placeholder="Optional note about why this cost happened"></textarea>
+        </label>
+        <label>
+          Receipt file
+          <input type="file" name="receipt_file" accept="{{ receipt_upload_accept }}">
+        </label>
+        <div class="form-actions">
+          <span class="summary-note">Upload a receipt image or PDF when you have one so Claire can keep a clean cost record.</span>
+          <button class="button button-primary" type="submit">Save expense</button>
+        </div>
+      </form>
+      <div class="table-stack">
+        {% for expense in expense_receipts %}
+          <div class="admin-row ledger-row">
+            <div>
+              <strong>{{ expense.vendor }}</strong>
+              <p>{{ expense.expense_date|pretty_date }} | {{ expense.category }}</p>
+              {% if expense.notes %}
+                <p>{{ expense.notes }}</p>
+              {% endif %}
+              {% if expense.receipt_stored_name %}
+                <a class="text-link" href="{{ url_for('admin_expense_receipt_file', expense_id=expense.id) }}">View receipt</a>
+              {% endif %}
+            </div>
+            <strong class="price">{{ expense.amount_cents|money }}</strong>
+          </div>
+        {% else %}
+          <p>No expense receipts logged yet.</p>
+        {% endfor %}
+      </div>
+    </article>
+
     <article class="card">
       <div class="section-heading">
         <div>
@@ -27,7 +232,7 @@
           <div class="admin-row">
             <div>
               <strong>{{ item.name }}</strong>
-              <p>{{ item.quantity_available }} available · {{ item.price_cents|money }} · {{ "Active" if item.is_active else "Hidden" }}</p>
+              <p>{{ item.quantity_available }} available | {{ item.price_cents|money }} | {{ "Active" if item.is_active else "Hidden" }}</p>
             </div>
             <a class="text-link" href="{{ url_for('admin_inventory_edit', item_id=item.id) }}">Edit</a>
           </div>
@@ -48,8 +253,8 @@
         {% for order in orders %}
           <div class="admin-row order-row">
             <div>
-              <strong>#{{ order.id }} · {{ order.customer_name }}</strong>
-              <p>{{ order.payment_method|title }} · {{ order.payment_status.replace('_', ' ')|title }} · {{ order.total_cents|money }}</p>
+              <strong>#{{ order.id }} | {{ order.customer_name }}</strong>
+              <p>{{ order.payment_method|title }} | {{ order.payment_status.replace('_', ' ')|title }} | {{ order.total_cents|money }}</p>
               <p>
                 {% for item in order_items.get(order.id, []) %}
                   {{ item.quantity }}x {{ item.inventory_name }}{% if not loop.last %}, {% endif %}
@@ -84,7 +289,7 @@
           <div class="admin-row">
             <div>
               <strong>{{ post.title }}</strong>
-              <p>{{ "Published" if post.is_published else "Draft" }} · Facebook: {{ post.facebook_status.replace('-', ' ')|title }}</p>
+              <p>{{ "Published" if post.is_published else "Draft" }} | Facebook: {{ post.facebook_status.replace('-', ' ')|title }}</p>
             </div>
             <div class="admin-actions">
               <a class="text-link" href="{{ url_for('admin_news_edit', post_id=post.id) }}">Edit</a>
@@ -111,7 +316,7 @@
           <div class="admin-row message-row">
             <div>
               <strong>{{ message.name }}</strong>
-              <p>{{ message.email }} · {{ message.phone }}</p>
+              <p>{{ message.email }} | {{ message.phone }}</p>
               <p>{{ message.message }}</p>
             </div>
           </div>

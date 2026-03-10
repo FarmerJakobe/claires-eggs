@@ -1,42 +1,61 @@
 from __future__ import annotations
 
+from datetime import datetime
 from functools import wraps
+from pathlib import Path
+from uuid import uuid4
 
 from flask import (
     Flask,
     abort,
+    g,
     flash,
     redirect,
     render_template,
     request,
+    send_from_directory,
     session,
     url_for,
 )
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.utils import secure_filename
 
 from .config import card_payments_enabled, load_config
 from .db import get_db, init_app as init_db
-from .schedule import next_pickup_window
+from .schedule import local_now, next_pickup_window
 from .store import (
+    create_expense_receipt,
     StoreError,
+    create_sales_entry,
     create_inventory_item,
+    get_expense_receipt,
+    get_financial_summary,
     get_order,
     get_post,
     get_post_by_slug,
     list_active_inventory,
     list_all_inventory,
     list_contact_messages,
+    list_expense_receipts,
     list_order_items,
+    list_popular_pages,
     list_posts,
     list_recent_orders,
+    list_sales_entries,
+    list_visit_daily_totals,
     place_order,
+    record_website_visit,
     save_contact_message,
     save_post,
     sync_post_to_facebook,
     update_inventory_item,
     update_order_status,
 )
-from .utils import cents_to_dollars
+from .utils import cents_to_dollars, dollars_to_cents
+
+
+PUBLIC_VISIT_PATH_PREFIXES = ("/admin", "/static", "/healthz")
+ALLOWED_RECEIPT_EXTENSIONS = {".jpg", ".jpeg", ".pdf", ".png", ".webp"}
 
 
 def create_app() -> Flask:
@@ -55,10 +74,51 @@ def create_app() -> Flask:
             "card_payments_enabled": card_payments_enabled(app.config),
         }
 
+    @app.before_request
+    def prepare_visitor_tracking():
+        is_public_get = (
+            request.method == "GET"
+            and not any(request.path.startswith(prefix) for prefix in PUBLIC_VISIT_PATH_PREFIXES)
+        )
+        g.track_visitor_event = is_public_get
+        if not is_public_get:
+            return
+        g.visitor_token = request.cookies.get("claire_visitor") or uuid4().hex
+        g.set_visitor_cookie = "claire_visitor" not in request.cookies
+
+    @app.after_request
+    def persist_visitor_tracking(response):
+        if getattr(g, "track_visitor_event", False) and response.status_code < 400:
+            database = get_db()
+            try:
+                record_website_visit(database, request.path, g.visitor_token)
+                database.commit()
+            except Exception:
+                database.rollback()
+        if getattr(g, "set_visitor_cookie", False):
+            response.set_cookie(
+                "claire_visitor",
+                g.visitor_token,
+                max_age=60 * 60 * 24 * 365,
+                samesite="Lax",
+                secure=request.is_secure,
+                httponly=True,
+            )
+        return response
+
     @app.template_filter("nl2br")
     def nl2br(value: str) -> str:
         paragraphs = [segment.strip() for segment in value.splitlines() if segment.strip()]
         return "".join(f"<p>{paragraph}</p>" for paragraph in paragraphs)
+
+    @app.template_filter("pretty_date")
+    def pretty_date(value: str) -> str:
+        try:
+            if not value:
+                return ""
+            return datetime.fromisoformat(value[:10]).strftime("%b %d, %Y")
+        except (TypeError, ValueError):
+            return ""
 
     def admin_required(view_func):
         @wraps(view_func)
@@ -169,6 +229,10 @@ def create_app() -> Flask:
         inventory = list_all_inventory(database)
         posts = list_posts(database)
         messages = list_contact_messages(database)
+        visit_days = list_visit_daily_totals(database, days=14)
+        visit_chart_max = max(
+            [max(day["page_views"], day["unique_visitors"]) for day in visit_days] or [0]
+        )
         return render_template(
             "admin/dashboard.html",
             orders=orders,
@@ -176,6 +240,14 @@ def create_app() -> Flask:
             inventory=inventory,
             posts=posts,
             messages=messages,
+            financial_summary=get_financial_summary(database),
+            sales_entries=list_sales_entries(database),
+            expense_receipts=list_expense_receipts(database),
+            visit_days=visit_days,
+            visit_chart_max=visit_chart_max,
+            popular_pages=list_popular_pages(database),
+            receipt_upload_accept=",".join(sorted(ALLOWED_RECEIPT_EXTENSIONS)),
+            today=local_now().date().isoformat(),
         )
 
     @app.route("/admin/inventory/new", methods=["GET", "POST"])
@@ -236,6 +308,67 @@ def create_app() -> Flask:
             database.commit()
             flash(f"Order #{order_id} updated to {new_status}.", "success")
         return redirect(url_for("admin_dashboard"))
+
+    @app.route("/admin/sales/new", methods=["POST"])
+    @admin_required
+    def admin_sales_new():
+        database = get_db()
+        form_data = normalize_form(request.form)
+        try:
+            form_data["amount_cents"] = dollars_to_cents(form_data.get("amount", ""))
+            create_sales_entry(database, form_data)
+        except (StoreError, ValueError) as exc:
+            database.rollback()
+            flash(str(exc), "error")
+        else:
+            database.commit()
+            flash("Sale logged.", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    @app.route("/admin/expenses/new", methods=["POST"])
+    @admin_required
+    def admin_expenses_new():
+        database = get_db()
+        form_data = normalize_form(request.form)
+        receipt_file = request.files.get("receipt_file")
+        stored_name = None
+        try:
+            form_data["amount_cents"] = dollars_to_cents(form_data.get("amount", ""))
+            if receipt_file and receipt_file.filename:
+                stored_name = save_receipt_upload(receipt_file, app.config["RECEIPTS_UPLOAD_DIR"])
+                form_data["receipt_original_name"] = receipt_file.filename
+                form_data["receipt_stored_name"] = stored_name
+                form_data["receipt_content_type"] = receipt_file.content_type or ""
+            create_expense_receipt(database, form_data)
+        except (StoreError, ValueError) as exc:
+            database.rollback()
+            if stored_name:
+                remove_receipt_upload(app.config["RECEIPTS_UPLOAD_DIR"], stored_name)
+            flash(str(exc), "error")
+        except Exception:
+            database.rollback()
+            if stored_name:
+                remove_receipt_upload(app.config["RECEIPTS_UPLOAD_DIR"], stored_name)
+            flash("We could not save that expense receipt.", "error")
+        else:
+            database.commit()
+            flash("Expense saved.", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    @app.route("/admin/expenses/<int:expense_id>/receipt")
+    @admin_required
+    def admin_expense_receipt_file(expense_id: int):
+        database = get_db()
+        expense = get_expense_receipt(database, expense_id)
+        if not expense or not expense["receipt_stored_name"]:
+            abort(404)
+        return send_from_directory(
+            app.config["RECEIPTS_UPLOAD_DIR"],
+            expense["receipt_stored_name"],
+            as_attachment=False,
+            download_name=expense["receipt_original_name"] or expense["receipt_stored_name"],
+            mimetype=expense["receipt_content_type"] or None,
+        )
 
     @app.route("/admin/news/new", methods=["GET", "POST"])
     @admin_required
@@ -300,3 +433,22 @@ def normalize_form(form_data):
         else:
             normalized[key] = values
     return normalized
+
+
+def save_receipt_upload(receipt_file, upload_dir: str) -> str:
+    original_name = secure_filename(receipt_file.filename or "")
+    extension = Path(original_name).suffix.lower()
+    if extension not in ALLOWED_RECEIPT_EXTENSIONS:
+        raise ValueError("Receipt files must be PNG, JPG, WEBP, or PDF.")
+
+    target_dir = Path(upload_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    stored_name = f"{uuid4().hex}{extension}"
+    receipt_file.save(target_dir / stored_name)
+    return stored_name
+
+
+def remove_receipt_upload(upload_dir: str, stored_name: str) -> None:
+    target_path = Path(upload_dir) / stored_name
+    if target_path.exists():
+        target_path.unlink()

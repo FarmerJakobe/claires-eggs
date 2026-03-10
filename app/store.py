@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import sqlite3
+from datetime import timedelta
 from typing import Iterable
 
 from flask import current_app
@@ -369,6 +371,213 @@ def list_contact_messages(database: sqlite3.Connection):
     ).fetchall()
 
 
+def record_website_visit(
+    database: sqlite3.Connection, path: str, visitor_token: str
+) -> None:
+    now = local_now()
+    database.execute(
+        """
+        INSERT INTO visitor_events (visitor_token, path, visit_date, visited_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            hashlib.sha256(visitor_token.encode("utf-8")).hexdigest(),
+            path,
+            now.date().isoformat(),
+            now.isoformat(),
+        ),
+    )
+
+
+def list_visit_daily_totals(database: sqlite3.Connection, days: int = 14):
+    start_day = local_now().date() - timedelta(days=days - 1)
+    rows = database.execute(
+        """
+        SELECT visit_date, COUNT(*) AS page_views, COUNT(DISTINCT visitor_token) AS unique_visitors
+        FROM visitor_events
+        WHERE visit_date >= ?
+        GROUP BY visit_date
+        ORDER BY visit_date ASC
+        """,
+        (start_day.isoformat(),),
+    ).fetchall()
+    row_map = {row["visit_date"]: row for row in rows}
+
+    totals = []
+    for offset in range(days):
+        day = start_day + timedelta(days=offset)
+        row = row_map.get(day.isoformat())
+        totals.append(
+            {
+                "date": day.isoformat(),
+                "label": day.strftime("%b ") + str(day.day),
+                "page_views": int(row["page_views"]) if row else 0,
+                "unique_visitors": int(row["unique_visitors"]) if row else 0,
+            }
+        )
+    return totals
+
+
+def list_popular_pages(database: sqlite3.Connection, days: int = 30, limit: int = 5):
+    start_day = local_now().date() - timedelta(days=days - 1)
+    rows = database.execute(
+        """
+        SELECT path, COUNT(*) AS page_views, COUNT(DISTINCT visitor_token) AS unique_visitors
+        FROM visitor_events
+        WHERE visit_date >= ?
+        GROUP BY path
+        ORDER BY page_views DESC, path ASC
+        LIMIT ?
+        """,
+        (start_day.isoformat(), limit),
+    ).fetchall()
+
+    pages = []
+    for row in rows:
+        pages.append(
+            {
+                "path": row["path"],
+                "label": friendly_path_label(row["path"]),
+                "page_views": int(row["page_views"]),
+                "unique_visitors": int(row["unique_visitors"]),
+            }
+        )
+    return pages
+
+
+def create_sales_entry(database: sqlite3.Connection, form_data: dict) -> None:
+    title = form_data.get("title", "").strip() or "Market sale"
+    payment_method = form_data.get("payment_method", "cash").strip().lower()
+    amount_cents = int(form_data["amount_cents"])
+    sale_date = form_data.get("sale_date", "").strip() or local_now().date().isoformat()
+    notes = form_data.get("notes", "").strip()
+
+    if amount_cents <= 0:
+        raise StoreError("Sale amount must be greater than zero.")
+    if payment_method not in {"cash", "card", "other"}:
+        raise StoreError("Choose cash, card, or other for the sale.")
+
+    database.execute(
+        """
+        INSERT INTO sales_entries (
+            sale_date, title, amount_cents, payment_method, notes, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (sale_date, title, amount_cents, payment_method, notes, local_now().isoformat()),
+    )
+
+
+def list_sales_entries(database: sqlite3.Connection, limit: int = 10):
+    return database.execute(
+        """
+        SELECT *
+        FROM sales_entries
+        ORDER BY sale_date DESC, id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
+def create_expense_receipt(database: sqlite3.Connection, form_data: dict) -> int:
+    vendor = form_data.get("vendor", "").strip()
+    category = form_data.get("category", "").strip() or "Supplies"
+    amount_cents = int(form_data["amount_cents"])
+    expense_date = form_data.get("expense_date", "").strip() or local_now().date().isoformat()
+    notes = form_data.get("notes", "").strip()
+    receipt_original_name = form_data.get("receipt_original_name")
+    receipt_stored_name = form_data.get("receipt_stored_name")
+    receipt_content_type = form_data.get("receipt_content_type")
+
+    if not vendor:
+        raise StoreError("Vendor or store name is required.")
+    if amount_cents <= 0:
+        raise StoreError("Expense amount must be greater than zero.")
+
+    cursor = database.execute(
+        """
+        INSERT INTO expense_receipts (
+            expense_date, vendor, category, amount_cents, notes,
+            receipt_original_name, receipt_stored_name, receipt_content_type, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            expense_date,
+            vendor,
+            category,
+            amount_cents,
+            notes,
+            receipt_original_name,
+            receipt_stored_name,
+            receipt_content_type,
+            local_now().isoformat(),
+        ),
+    )
+    return int(cursor.lastrowid)
+
+
+def list_expense_receipts(database: sqlite3.Connection, limit: int = 10):
+    return database.execute(
+        """
+        SELECT *
+        FROM expense_receipts
+        ORDER BY expense_date DESC, id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
+def get_expense_receipt(database: sqlite3.Connection, expense_id: int):
+    return database.execute(
+        "SELECT * FROM expense_receipts WHERE id = ?",
+        (expense_id,),
+    ).fetchone()
+
+
+def get_financial_summary(database: sqlite3.Connection):
+    order_summary = database.execute(
+        """
+        SELECT
+            COALESCE(SUM(CASE WHEN order_status != 'cancelled' THEN total_cents END), 0) AS website_revenue_cents,
+            COALESCE(COUNT(CASE WHEN order_status != 'cancelled' THEN 1 END), 0) AS website_order_count
+        FROM orders
+        """
+    ).fetchone()
+    sales_summary = database.execute(
+        """
+        SELECT
+            COALESCE(SUM(amount_cents), 0) AS manual_sales_cents,
+            COALESCE(COUNT(*), 0) AS manual_sales_count
+        FROM sales_entries
+        """
+    ).fetchone()
+    expense_summary = database.execute(
+        """
+        SELECT
+            COALESCE(SUM(amount_cents), 0) AS expense_cents,
+            COALESCE(COUNT(*), 0) AS expense_count
+        FROM expense_receipts
+        """
+    ).fetchone()
+
+    website_revenue_cents = int(order_summary["website_revenue_cents"])
+    manual_sales_cents = int(sales_summary["manual_sales_cents"])
+    expense_cents = int(expense_summary["expense_cents"])
+    gross_revenue_cents = website_revenue_cents + manual_sales_cents
+
+    return {
+        "website_revenue_cents": website_revenue_cents,
+        "website_order_count": int(order_summary["website_order_count"]),
+        "manual_sales_cents": manual_sales_cents,
+        "manual_sales_count": int(sales_summary["manual_sales_count"]),
+        "expense_cents": expense_cents,
+        "expense_count": int(expense_summary["expense_count"]),
+        "gross_revenue_cents": gross_revenue_cents,
+        "net_revenue_cents": gross_revenue_cents - expense_cents,
+    }
+
+
 def place_order(database: sqlite3.Connection, form_data: dict) -> int:
     line_items = normalize_line_items(form_data)
     if not line_items:
@@ -547,3 +756,19 @@ def ensure_unique_slug(database: sqlite3.Connection, slug: str, post_id: int | N
             return candidate
         candidate = f"{slug}-{suffix}"
         suffix += 1
+
+
+def friendly_path_label(path: str) -> str:
+    if path == "/":
+        return "Home"
+    if path == "/orders":
+        return "Orders"
+    if path == "/news":
+        return "News"
+    if path == "/contact":
+        return "Contact"
+    if path.startswith("/news/"):
+        return "News story"
+    if path.startswith("/orders/"):
+        return "Order confirmation"
+    return path or "Unknown"

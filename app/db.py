@@ -89,6 +89,49 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     message TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS visitor_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    visitor_token TEXT NOT NULL,
+    path TEXT NOT NULL,
+    visit_date TEXT NOT NULL,
+    visited_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_visitor_events_visit_date
+ON visitor_events(visit_date);
+
+CREATE INDEX IF NOT EXISTS idx_visitor_events_path
+ON visitor_events(path);
+
+CREATE TABLE IF NOT EXISTS sales_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sale_date TEXT NOT NULL,
+    title TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    payment_method TEXT NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sales_entries_sale_date
+ON sales_entries(sale_date);
+
+CREATE TABLE IF NOT EXISTS expense_receipts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    expense_date TEXT NOT NULL,
+    vendor TEXT NOT NULL,
+    category TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    receipt_original_name TEXT,
+    receipt_stored_name TEXT,
+    receipt_content_type TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_expense_receipts_expense_date
+ON expense_receipts(expense_date);
 """
 
 
