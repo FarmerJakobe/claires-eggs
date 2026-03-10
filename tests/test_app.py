@@ -5,9 +5,12 @@ import os
 import tempfile
 import unittest
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 from app.app import create_app
+from app.facebook import publish_post
 from app.db import get_db
+from app.payments import StripeSessionUpdate
 from app.schedule import DENVER, next_pickup_window
 
 
@@ -28,6 +31,12 @@ class ClaireEggsTestCase(unittest.TestCase):
         os.environ.pop("PAYMENT_MODE", None)
         os.environ.pop("FLASK_SECRET_KEY", None)
         os.environ.pop("CLAIRE_ADMIN_PASSWORD", None)
+        os.environ.pop("SITE_URL", None)
+        os.environ.pop("STRIPE_SECRET_KEY", None)
+        os.environ.pop("STRIPE_WEBHOOK_SECRET", None)
+        os.environ.pop("FACEBOOK_SYNC_MODE", None)
+        os.environ.pop("FACEBOOK_PAGE_ID", None)
+        os.environ.pop("FACEBOOK_PAGE_ACCESS_TOKEN", None)
 
     def test_home_page_loads(self):
         response = self.client.get("/")
@@ -82,6 +91,62 @@ class ClaireEggsTestCase(unittest.TestCase):
         reference = datetime(2026, 3, 11, 16, 1, tzinfo=DENVER)
         pickup = next_pickup_window(reference)
         self.assertEqual(pickup.starts_at.date().isoformat(), "2026-03-18")
+
+    @patch("app.app.parse_stripe_webhook")
+    def test_stripe_webhook_marks_order_paid(self, mock_parse_webhook):
+        order_id = self.create_test_order(payment_method="card", payment_status="awaiting_payment")
+        mock_parse_webhook.return_value = StripeSessionUpdate(
+            order_id=order_id,
+            payment_status="paid_online",
+            stripe_reference="pi_test_123",
+            checkout_url=None,
+            detail="Stripe confirmed payment.",
+        )
+
+        response = self.client.post(
+            "/webhooks/stripe",
+            data=b"{}",
+            headers={"Stripe-Signature": "test-signature"},
+        )
+        self.assertEqual(response.status_code, 200)
+
+        with self.app.app_context():
+            database = get_db()
+            order = database.execute(
+                "SELECT payment_status, stripe_reference, stripe_checkout_url FROM orders WHERE id = ?",
+                (order_id,),
+            ).fetchone()
+        self.assertEqual(order["payment_status"], "paid_online")
+        self.assertEqual(order["stripe_reference"], "pi_test_123")
+        self.assertFalse(order["stripe_checkout_url"])
+
+    @patch("app.facebook.urlopen")
+    def test_facebook_page_publish_returns_published_status(self, mock_urlopen):
+        response = MagicMock()
+        response.read.return_value = b'{"id":"123_456"}'
+        response.__enter__.return_value = response
+        response.__exit__.return_value = False
+        mock_urlopen.return_value = response
+
+        result = publish_post(
+            {
+                "publish_to_facebook": 1,
+                "facebook_message": "Fresh eggs this Wednesday.",
+                "excerpt": "Fresh eggs this Wednesday.",
+                "slug": "fresh-eggs",
+                "is_published": 1,
+            },
+            {
+                "FACEBOOK_SYNC_MODE": "page",
+                "FACEBOOK_PAGE_ID": "page-123",
+                "FACEBOOK_PAGE_ACCESS_TOKEN": "page-token",
+                "FACEBOOK_GRAPH_API_VERSION": "v23.0",
+                "SITE_URL": "https://eggsincrawford.com",
+            },
+        )
+
+        self.assertEqual(result.status, "published")
+        self.assertIn("123_456", result.detail)
 
     def test_admin_can_log_manual_sale(self):
         self.login_admin()
@@ -153,6 +218,39 @@ class ClaireEggsTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Admin dashboard", response.data)
+
+    def create_test_order(self, payment_method="cash", payment_status="reserved"):
+        with self.app.app_context():
+            database = get_db()
+            cursor = database.execute(
+                """
+                INSERT INTO orders (
+                    customer_name, email, phone, payment_method, payment_status, order_status,
+                    pickup_date, pickup_window, subtotal_cents, fee_cents, total_cents,
+                    notes, created_at, updated_at, stripe_reference, stripe_checkout_url
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "Test Customer",
+                    "test@example.com",
+                    "555-1212",
+                    payment_method,
+                    payment_status,
+                    "open",
+                    "2026-03-11",
+                    "3:00 PM - 4:00 PM MDT",
+                    650,
+                    65 if payment_method == "card" else 0,
+                    715 if payment_method == "card" else 650,
+                    "",
+                    "2026-03-10T00:00:00-06:00",
+                    "2026-03-10T00:00:00-06:00",
+                    "",
+                    "https://checkout.stripe.test/session",
+                ),
+            )
+            database.commit()
+            return cursor.lastrowid
 
 
 if __name__ == "__main__":

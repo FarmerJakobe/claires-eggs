@@ -27,6 +27,11 @@
       <p>Subtotal: {{ order.subtotal_cents|money }}</p>
       <p>Fee: {{ order.fee_cents|money }}</p>
       <p><strong>Total: {{ order.total_cents|money }}</strong></p>
+      {% if order.payment_status == "paid_online" %}
+        <p class="summary-note">Stripe has confirmed this card payment.</p>
+      {% elif order.payment_method == "card" %}
+        <p class="summary-note">Card reservations are held while Stripe confirms payment.</p>
+      {% endif %}
       {% if order.stripe_checkout_url %}
         <p><a class="button button-primary" href="{{ order.stripe_checkout_url }}">Open Stripe Checkout</a></p>
       {% endif %}

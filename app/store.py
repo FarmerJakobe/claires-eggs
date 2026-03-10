@@ -174,6 +174,43 @@ def get_order(database: sqlite3.Connection, order_id: int):
     return {"order": order, "items": items}
 
 
+def update_order_payment(
+    database: sqlite3.Connection,
+    order_id: int,
+    payment_status: str,
+    stripe_reference: str = "",
+    checkout_url: str | None = None,
+) -> None:
+    order_bundle = get_order(database, order_id)
+    if not order_bundle:
+        raise StoreError("Order not found.")
+
+    order = order_bundle["order"]
+    updates = {
+        "payment_status": payment_status,
+        "stripe_reference": stripe_reference or order["stripe_reference"],
+        "stripe_checkout_url": checkout_url
+        if checkout_url is not None
+        else order["stripe_checkout_url"],
+        "updated_at": local_now().isoformat(),
+    }
+
+    database.execute(
+        """
+        UPDATE orders
+        SET payment_status = ?, stripe_reference = ?, stripe_checkout_url = ?, updated_at = ?
+        WHERE id = ?
+        """,
+        (
+            updates["payment_status"],
+            updates["stripe_reference"],
+            updates["stripe_checkout_url"],
+            updates["updated_at"],
+            order_id,
+        ),
+    )
+
+
 def update_order_status(database: sqlite3.Connection, order_id: int, new_status: str) -> None:
     order_bundle = get_order(database, order_id)
     if not order_bundle:
@@ -338,7 +375,7 @@ def sync_post_to_facebook(database: sqlite3.Connection, post_id: int) -> None:
         """,
         (
             sync_result.status,
-            "" if sync_result.status != "queued" else sync_result.detail,
+            sync_result.detail if sync_result.status in {"error", "manual", "queued"} else "",
             local_now().isoformat(),
             post_id,
         ),

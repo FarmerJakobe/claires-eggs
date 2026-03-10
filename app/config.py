@@ -29,9 +29,17 @@ def load_config() -> dict:
         "PAYMENT_MODE": os.environ.get("PAYMENT_MODE", "demo").lower(),
         "STRIPE_SECRET_KEY": os.environ.get("STRIPE_SECRET_KEY", ""),
         "STRIPE_PUBLISHABLE_KEY": os.environ.get("STRIPE_PUBLISHABLE_KEY", ""),
+        "STRIPE_WEBHOOK_SECRET": os.environ.get("STRIPE_WEBHOOK_SECRET", ""),
         "FACEBOOK_SYNC_MODE": os.environ.get("FACEBOOK_SYNC_MODE", "demo").lower(),
         "FACEBOOK_GROUP_ID": os.environ.get("FACEBOOK_GROUP_ID", ""),
         "FACEBOOK_ACCESS_TOKEN": os.environ.get("FACEBOOK_ACCESS_TOKEN", ""),
+        "FACEBOOK_PAGE_ID": os.environ.get("FACEBOOK_PAGE_ID", ""),
+        "FACEBOOK_PAGE_ACCESS_TOKEN": os.environ.get(
+            "FACEBOOK_PAGE_ACCESS_TOKEN", ""
+        ),
+        "FACEBOOK_GRAPH_API_VERSION": os.environ.get(
+            "FACEBOOK_GRAPH_API_VERSION", "v23.0"
+        ),
         "PREFERRED_URL_SCHEME": os.environ.get("PREFERRED_URL_SCHEME", "https"),
         "MAX_CONTENT_LENGTH": int(
             os.environ.get("MAX_CONTENT_LENGTH_MB", "8")

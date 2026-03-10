@@ -22,6 +22,7 @@ from werkzeug.utils import secure_filename
 
 from .config import card_payments_enabled, load_config
 from .db import get_db, init_app as init_db
+from .payments import parse_stripe_webhook, refresh_payment_from_session
 from .schedule import local_now, next_pickup_window
 from .store import (
     create_expense_receipt,
@@ -49,12 +50,13 @@ from .store import (
     save_post,
     sync_post_to_facebook,
     update_inventory_item,
+    update_order_payment,
     update_order_status,
 )
 from .utils import cents_to_dollars, dollars_to_cents
 
 
-PUBLIC_VISIT_PATH_PREFIXES = ("/admin", "/static", "/healthz")
+PUBLIC_VISIT_PATH_PREFIXES = ("/admin", "/static", "/healthz", "/webhooks")
 ALLOWED_RECEIPT_EXTENSIONS = {".jpg", ".jpeg", ".pdf", ".png", ".webp"}
 
 
@@ -167,10 +169,55 @@ def create_app() -> Flask:
     @app.route("/orders/<int:order_id>/confirmation")
     def order_confirmation(order_id: int):
         database = get_db()
+        session_id = request.args.get("session_id", "").strip()
+        if session_id:
+            try:
+                session_update = refresh_payment_from_session(session_id, app.config)
+            except Exception:
+                database.rollback()
+            else:
+                if session_update and session_update.order_id == order_id:
+                    update_order_payment(
+                        database,
+                        order_id,
+                        session_update.payment_status,
+                        session_update.stripe_reference,
+                        "" if session_update.payment_status == "paid_online" else session_update.checkout_url,
+                    )
+                    database.commit()
+
         order_bundle = get_order(database, order_id)
         if not order_bundle:
             abort(404)
         return render_template("order_confirmation.html", **order_bundle)
+
+    @app.route("/webhooks/stripe", methods=["POST"])
+    def stripe_webhook():
+        database = get_db()
+        signature = request.headers.get("Stripe-Signature", "")
+        try:
+            session_update = parse_stripe_webhook(request.get_data(), signature, app.config)
+        except Exception:
+            database.rollback()
+            return {"error": "invalid webhook"}, 400
+
+        if not session_update:
+            return {"status": "ignored"}, 200
+
+        try:
+            update_order_payment(
+                database,
+                session_update.order_id,
+                session_update.payment_status,
+                session_update.stripe_reference,
+                "" if session_update.payment_status == "paid_online" else session_update.checkout_url,
+            )
+        except StoreError:
+            database.rollback()
+            return {"error": "order not found"}, 404
+
+        database.commit()
+        return {"status": "ok"}, 200
 
     @app.route("/news")
     def news():

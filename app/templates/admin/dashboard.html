@@ -290,6 +290,9 @@
             <div>
               <strong>{{ post.title }}</strong>
               <p>{{ "Published" if post.is_published else "Draft" }} | Facebook: {{ post.facebook_status.replace('-', ' ')|title }}</p>
+              {% if post.facebook_last_error %}
+                <p class="summary-note">{{ post.facebook_last_error }}</p>
+              {% endif %}
             </div>
             <div class="admin-actions">
               <a class="text-link" href="{{ url_for('admin_news_edit', post_id=post.id) }}">Edit</a>

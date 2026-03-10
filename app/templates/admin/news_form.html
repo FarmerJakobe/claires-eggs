@@ -23,6 +23,10 @@
         Facebook copy
         <textarea name="facebook_message" rows="4">{{ post.facebook_message if post else '' }}</textarea>
       </label>
+      <p class="summary-note">
+        Automatic posting now targets a Facebook Page when the live Meta Page credentials are configured.
+        Group sharing still needs manual copy because Meta deprecated the old group publishing permission.
+      </p>
       <div class="checkbox-grid">
         <label class="checkbox-row">
           <input type="checkbox" name="is_published" value="1" {% if post and post.is_published %}checked{% endif %}>

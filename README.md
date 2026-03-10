@@ -69,5 +69,8 @@ Important:
 ## Stripe and Facebook
 
 - `PAYMENT_MODE=demo` keeps the card flow local and marks card orders as paid in demo mode.
-- If you later add Stripe keys and switch to `PAYMENT_MODE=stripe`, the app will create a Stripe Checkout session.
-- `FACEBOOK_SYNC_MODE=demo` records a simulated Facebook publish locally. Real group posting will require separate Facebook app permissions and may need a different integration path.
+- If you later add Stripe keys and switch to `PAYMENT_MODE=stripe`, the app will create a Stripe Checkout session and confirm payment through `POST /webhooks/stripe`.
+- For live card checkout, set `STRIPE_SECRET_KEY` to a live secret key and configure `STRIPE_WEBHOOK_SECRET` from the Stripe webhook endpoint for this app.
+- `FACEBOOK_SYNC_MODE=demo` records a simulated Facebook publish locally.
+- `FACEBOOK_SYNC_MODE=page` publishes to a Facebook Page using `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_ACCESS_TOKEN`.
+- Automatic posting to a Facebook Group is not treated as the production path here because Meta deprecated the old `publish_to_groups` permission; keep group sharing manual unless Meta re-enables a supported route for your app.
