@@ -22,11 +22,11 @@
         </div>
         <div>
           <span class="metric-label">Payment options</span>
-          <strong>Cash or card</strong>
+          <strong>{{ "Cash or card" if card_payments_enabled else "Cash reservations" }}</strong>
         </div>
         <div>
-          <span class="metric-label">Card pricing</span>
-          <strong>10% fee shown upfront</strong>
+          <span class="metric-label">{{ "Card pricing" if card_payments_enabled else "Card checkout" }}</span>
+          <strong>{{ "10% fee shown upfront" if card_payments_enabled else "Turns on when live Stripe is connected" }}</strong>
         </div>
       </div>
     </div>
@@ -57,8 +57,13 @@
       <p class="eyebrow">The system</p>
       <h2>First come, first served with live stock updates.</h2>
       <p>
-        Cash orders act as reservations. Card orders calculate the extra 10% fee automatically. Either way,
-        once a customer checks out, those cartons are taken out of available inventory immediately.
+        {% if card_payments_enabled %}
+          Cash orders act as reservations. Card orders calculate the extra 10% fee automatically. Either way,
+          once a customer checks out, those cartons are taken out of available inventory immediately.
+        {% else %}
+          Cash orders act as reservations and remove cartons from live inventory right away. Card checkout is
+          wired for Stripe and will be switched on once Claire's live account is connected.
+        {% endif %}
       </p>
     </article>
   </section>

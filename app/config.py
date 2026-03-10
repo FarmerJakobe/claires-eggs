@@ -8,6 +8,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 INSTANCE_DIR = BASE_DIR / "instance"
 
 
+def card_payments_enabled(config: dict) -> bool:
+    return config.get("PAYMENT_MODE") == "stripe" and config.get(
+        "STRIPE_SECRET_KEY", ""
+    ).startswith("sk_live_")
+
+
 def load_config() -> dict:
     return {
         "SECRET_KEY": os.environ.get("FLASK_SECRET_KEY", "claire-farm-eggs-secret"),

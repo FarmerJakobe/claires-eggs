@@ -5,6 +5,7 @@ from typing import Iterable
 
 from flask import current_app
 
+from .config import card_payments_enabled
 from .facebook import publish_post
 from .payments import create_payment
 from .schedule import local_now, next_pickup_window
@@ -383,6 +384,8 @@ def place_order(database: sqlite3.Connection, form_data: dict) -> int:
         raise StoreError("Name, email, and phone are required.")
     if payment_method not in {"cash", "card"}:
         raise StoreError("Choose either cash or card.")
+    if payment_method == "card" and not card_payments_enabled(current_app.config):
+        raise StoreError("Card checkout is not live yet. Choose cash for now.")
 
     pickup_window = next_pickup_window()
     database.execute("BEGIN IMMEDIATE")

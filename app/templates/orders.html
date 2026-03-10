@@ -65,10 +65,12 @@
           <input type="radio" name="payment_method" value="cash" checked data-payment-option>
           Reserve with cash at pickup
         </label>
-        <label>
-          <input type="radio" name="payment_method" value="card" data-payment-option>
-          Pay by card online (+10%)
-        </label>
+        {% if card_payments_enabled %}
+          <label>
+            <input type="radio" name="payment_method" value="card" data-payment-option>
+            Pay by card online (+10%)
+          </label>
+        {% endif %}
       </fieldset>
 
       <label>
@@ -104,10 +106,10 @@
         </div>
       </dl>
       <p class="summary-note">
-        {% if payment_mode == "demo" %}
-          Card orders run in local demo mode for this prototype. Cash orders reserve stock and are paid in person.
-        {% else %}
+        {% if card_payments_enabled %}
           Card orders continue into Stripe Checkout. Cash orders reserve stock for in-person pickup.
+        {% else %}
+          Cash reservations are live now. Card checkout will appear here once Claire's live Stripe account is connected.
         {% endif %}
       </p>
     </aside>

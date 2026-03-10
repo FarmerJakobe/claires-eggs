@@ -14,7 +14,7 @@ from flask import (
 )
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from .config import load_config
+from .config import card_payments_enabled, load_config
 from .db import get_db, init_app as init_db
 from .schedule import next_pickup_window
 from .store import (
@@ -52,6 +52,7 @@ def create_app() -> Flask:
         return {
             "pickup_window": next_pickup_window(),
             "payment_mode": app.config["PAYMENT_MODE"],
+            "card_payments_enabled": card_payments_enabled(app.config),
         }
 
     @app.template_filter("nl2br")
