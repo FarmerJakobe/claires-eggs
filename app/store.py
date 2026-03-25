@@ -672,7 +672,7 @@ def place_order(database: sqlite3.Connection, form_data: dict) -> int:
     if payment_method == "card" and not card_payments_enabled(current_app.config):
         raise StoreError("Card checkout is not live yet. Choose cash for now.")
 
-    pickup_window = next_pickup_window()
+    pickup_details = build_pickup_details(form_data.get("pickup_type", "market"))
     database.execute("BEGIN IMMEDIATE")
     try:
         normalized_items = []
@@ -703,21 +703,24 @@ def place_order(database: sqlite3.Connection, form_data: dict) -> int:
         cursor = database.execute(
             """
             INSERT INTO orders (
-                customer_name, email, phone, zip_code, payment_method, payment_status, order_status,
+                customer_name, email, phone, zip_code, pickup_type, pickup_location,
+                payment_method, payment_status, order_status,
                 pickup_date, pickup_window, subtotal_cents, fee_cents, total_cents,
                 notes, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 customer_name,
                 email,
                 phone,
                 zip_code,
+                pickup_details["pickup_type"],
+                pickup_details["pickup_location"],
                 payment_method,
                 payment_status,
                 "open",
-                pickup_window.starts_at.date().isoformat(),
-                f"{pickup_window.time_label} {pickup_window.timezone_label}",
+                pickup_details["pickup_date"],
+                pickup_details["pickup_window"],
                 subtotal_cents,
                 fee_cents,
                 total_cents,
@@ -771,8 +774,9 @@ def place_order(database: sqlite3.Connection, form_data: dict) -> int:
                 {
                     "id": order_id,
                     "email": email,
-                    "pickup_date": pickup_window.starts_at.date().isoformat(),
-                    "pickup_window": f"{pickup_window.time_label} {pickup_window.timezone_label}",
+                    "pickup_date": pickup_details["pickup_date"],
+                    "pickup_window": pickup_details["pickup_window"],
+                    "pickup_location": pickup_details["pickup_location"],
                     "fee_cents": fee_cents,
                     "items": normalized_items,
                 },
@@ -813,6 +817,27 @@ def normalize_line_items(form_data: dict) -> dict[int, int]:
         item_id = int(key.split("_", 1)[1])
         line_items[item_id] = quantity
     return line_items
+
+
+def build_pickup_details(pickup_type: str) -> dict[str, str]:
+    if pickup_type == "market":
+        pickup_window = next_pickup_window()
+        return {
+            "pickup_type": "market",
+            "pickup_location": "Hitching Post, Crawford, Colorado",
+            "pickup_date": pickup_window.starts_at.date().isoformat(),
+            "pickup_window": f"{pickup_window.time_label} {pickup_window.timezone_label}",
+        }
+
+    if pickup_type == "farm":
+        return {
+            "pickup_type": "farm",
+            "pickup_location": "Farm pickup",
+            "pickup_date": "",
+            "pickup_window": "Claire will contact you to arrange pickup.",
+        }
+
+    raise StoreError("Choose either Hitching Post pickup or farm pickup.")
 
 
 def ensure_unique_slug(database: sqlite3.Connection, slug: str, post_id: int | None) -> str:

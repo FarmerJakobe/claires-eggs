@@ -39,6 +39,8 @@ CREATE TABLE IF NOT EXISTS orders (
     email TEXT NOT NULL,
     phone TEXT NOT NULL,
     zip_code TEXT NOT NULL,
+    pickup_type TEXT NOT NULL,
+    pickup_location TEXT NOT NULL,
     payment_method TEXT NOT NULL,
     payment_status TEXT NOT NULL,
     order_status TEXT NOT NULL,
@@ -281,4 +283,12 @@ def ensure_orders_columns(database: sqlite3.Connection) -> None:
     if "zip_code" not in columns:
         database.execute(
             "ALTER TABLE orders ADD COLUMN zip_code TEXT NOT NULL DEFAULT ''"
+        )
+    if "pickup_type" not in columns:
+        database.execute(
+            "ALTER TABLE orders ADD COLUMN pickup_type TEXT NOT NULL DEFAULT 'market'"
+        )
+    if "pickup_location" not in columns:
+        database.execute(
+            "ALTER TABLE orders ADD COLUMN pickup_location TEXT NOT NULL DEFAULT 'Hitching Post, Crawford, Colorado'"
         )

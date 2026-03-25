@@ -11,7 +11,7 @@ except ImportError:  # pragma: no cover
 
 DENVER = ZoneInfo("America/Denver")
 PICKUP_START = time(hour=15, minute=0)
-PICKUP_END = time(hour=16, minute=0)
+PICKUP_END = time(hour=16, minute=30)
 
 
 @dataclass(frozen=True)
@@ -25,7 +25,7 @@ class PickupWindow:
 
     @property
     def time_label(self) -> str:
-        return "3:00 PM - 4:00 PM"
+        return "3:00 PM - 4:30 PM"
 
     @property
     def timezone_label(self) -> str:

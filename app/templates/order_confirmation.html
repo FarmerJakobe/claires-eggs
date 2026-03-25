@@ -5,11 +5,18 @@
 {% block content %}
   <section class="page-intro">
     <p class="eyebrow">Order confirmed</p>
-    <h1>Order #{{ order.id }} is on Claire's market list.</h1>
-    <p>
-      Pickup is scheduled for <strong>{{ order.pickup_date }}</strong> during
-      <strong>{{ order.pickup_window }}</strong> at the Hitching Post in Crawford.
-    </p>
+    <h1>Order #{{ order.id }} is reserved for pickup.</h1>
+    {% if order.pickup_type == "farm" %}
+      <p>
+        Your order is set for <strong>{{ order.pickup_location }}</strong>.
+        <strong>Claire will contact you</strong> using the phone number or email on this order.
+      </p>
+    {% else %}
+      <p>
+        Pickup is scheduled for <strong>{{ order.pickup_date }}</strong> during
+        <strong>{{ order.pickup_window }}</strong> at {{ order.pickup_location }}.
+      </p>
+    {% endif %}
   </section>
 
   <section class="section-grid">

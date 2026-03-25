@@ -85,6 +85,7 @@ def create_payment(order: dict, config: dict) -> PaymentResult:
             "order_id": str(order["id"]),
             "pickup_date": order["pickup_date"],
             "pickup_window": order["pickup_window"],
+            "pickup_location": order.get("pickup_location", ""),
         },
         payment_intent_data={"metadata": {"order_id": str(order["id"])}},
     )

@@ -7,9 +7,10 @@
     <p class="eyebrow">Orders</p>
     <h1>Reserve this week's stock before somebody else does.</h1>
     <p>
-      All cartons listed here are for pickup at the Hitching Post in Crawford on
+      Choose either Wednesday pickup at the Hitching Post in Crawford on
       <strong>{{ pickup_window.date_label }}</strong> from
-      <strong>{{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</strong>.
+      <strong>{{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</strong>,
+      or farm pickup and Claire will contact you directly.
     </p>
   </section>
 
@@ -73,6 +74,18 @@
       <p class="summary-note">Reservations are limited to Delta County and Montrose County ZIP codes.</p>
 
       <fieldset class="payment-choice">
+        <legend>Pickup option</legend>
+        <label>
+          <input type="radio" name="pickup_type" value="market" checked>
+          Hitching Post in Crawford on {{ pickup_window.date_label }} from {{ pickup_window.time_label }} {{ pickup_window.timezone_label }}
+        </label>
+        <label>
+          <input type="radio" name="pickup_type" value="farm">
+          Farm pickup. Claire will contact you with details.
+        </label>
+      </fieldset>
+
+      <fieldset class="payment-choice">
         <legend>Payment method</legend>
         <label>
           <input type="radio" name="payment_method" value="cash" checked data-payment-option>
@@ -101,9 +114,10 @@
         alt="Claire's Eggs official logo"
       >
       <p class="eyebrow">Pickup summary</p>
-      <h2>{{ pickup_window.date_label }}</h2>
-      <p class="pickup-window">{{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</p>
-      <p>Hitching Post, Crawford, Colorado</p>
+      <h2>Choose your pickup</h2>
+      <p class="pickup-window">{{ pickup_window.date_label }}</p>
+      <p>Hitching Post: {{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</p>
+      <p>Farm pickup: Claire will contact you after you reserve.</p>
       <dl class="totals">
         <div>
           <dt>Subtotal</dt>

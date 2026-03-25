@@ -72,6 +72,7 @@ class ClaireEggsTestCase(unittest.TestCase):
                 "email": "test@example.com",
                 "phone": "555-1212",
                 "zip_code": "81416",
+                "pickup_type": "market",
                 "payment_method": "cash",
                 f"item_{item_id}": "2",
             },
@@ -89,7 +90,7 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertEqual(updated["quantity_available"], starting_quantity - 2)
 
     def test_next_pickup_rolls_after_wednesday_close(self):
-        reference = datetime(2026, 3, 11, 16, 1, tzinfo=DENVER)
+        reference = datetime(2026, 3, 11, 16, 31, tzinfo=DENVER)
         pickup = next_pickup_window(reference)
         self.assertEqual(pickup.starts_at.date().isoformat(), "2026-03-18")
 
@@ -237,6 +238,7 @@ class ClaireEggsTestCase(unittest.TestCase):
                 "email": "outside@example.com",
                 "phone": "555-0000",
                 "zip_code": "80202",
+                "pickup_type": "market",
                 "payment_method": "cash",
                 f"item_{item['id']}": "1",
             },
@@ -247,6 +249,39 @@ class ClaireEggsTestCase(unittest.TestCase):
             b"Reservations are only available for Delta County or Montrose County ZIP codes.",
             response.data,
         )
+
+    def test_farm_pickup_order_shows_contact_follow_up(self):
+        with self.app.app_context():
+            database = get_db()
+            item = database.execute(
+                "SELECT * FROM inventory_items ORDER BY id ASC LIMIT 1"
+            ).fetchone()
+
+        response = self.client.post(
+            "/orders",
+            data={
+                "customer_name": "Farm Pickup Customer",
+                "email": "farm@example.com",
+                "phone": "555-7777",
+                "zip_code": "81416",
+                "pickup_type": "farm",
+                "payment_method": "cash",
+                f"item_{item['id']}": "1",
+            },
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Claire will contact you", response.data)
+
+        with self.app.app_context():
+            database = get_db()
+            order = database.execute(
+                "SELECT pickup_type, pickup_location, pickup_date, pickup_window FROM orders ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+        self.assertEqual(order["pickup_type"], "farm")
+        self.assertEqual(order["pickup_location"], "Farm pickup")
+        self.assertEqual(order["pickup_date"], "")
+        self.assertEqual(order["pickup_window"], "Claire will contact you to arrange pickup.")
 
     def test_admin_can_post_notice_with_image(self):
         self.login_admin()
@@ -367,21 +402,24 @@ class ClaireEggsTestCase(unittest.TestCase):
             cursor = database.execute(
                 """
                 INSERT INTO orders (
-                    customer_name, email, phone, zip_code, payment_method, payment_status, order_status,
+                    customer_name, email, phone, zip_code, pickup_type, pickup_location,
+                    payment_method, payment_status, order_status,
                     pickup_date, pickup_window, subtotal_cents, fee_cents, total_cents,
                     notes, created_at, updated_at, stripe_reference, stripe_checkout_url
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     "Test Customer",
                     "test@example.com",
                     "555-1212",
                     "81416",
+                    "market",
+                    "Hitching Post, Crawford, Colorado",
                     payment_method,
                     payment_status,
                     order_status,
                     "2026-03-11",
-                    "3:00 PM - 4:00 PM MDT",
+                    "3:00 PM - 4:30 PM MDT",
                     650,
                     65 if payment_method == "card" else 0,
                     715 if payment_method == "card" else 650,
