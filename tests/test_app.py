@@ -221,6 +221,36 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertIn(b"Confirm", response.data)
         self.assertIn(b"Fulfilled", response.data)
 
+    def test_admin_can_post_notice_with_image(self):
+        self.login_admin()
+
+        response = self.client.post(
+            "/admin/notices/new",
+            data={
+                "message": "Fresh eggs are packed and ready for Wednesday pickup.",
+                "publish_to_facebook": "1",
+                "notice_image": (io.BytesIO(b"fakepng"), "notice.png"),
+            },
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Notice board post published.", response.data)
+
+        with self.app.app_context():
+            database = get_db()
+            post = database.execute(
+                "SELECT title, body, image_stored_name, publish_to_facebook FROM posts ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+            self.assertIsNotNone(post)
+            self.assertIn("Fresh eggs are packed", post["title"])
+            self.assertEqual(post["body"], "Fresh eggs are packed and ready for Wednesday pickup.")
+            self.assertEqual(post["publish_to_facebook"], 1)
+            image_path = os.path.join(
+                self.app.config["POSTS_UPLOAD_DIR"], post["image_stored_name"]
+            )
+        self.assertTrue(os.path.exists(image_path))
+
     def test_confirmed_and_fulfilled_statuses_work_for_cash_orders(self):
         order_id = self.create_test_order()
         self.login_admin()

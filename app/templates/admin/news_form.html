@@ -6,7 +6,7 @@
   <section class="admin-form card">
     <p class="eyebrow">News</p>
     <h1>{{ "Edit post" if post else "Create announcement" }}</h1>
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
       <label>
         Title
         <input type="text" name="title" value="{{ post.title if post else '' }}" required>
@@ -23,6 +23,17 @@
         Facebook copy
         <textarea name="facebook_message" rows="4">{{ post.facebook_message if post else '' }}</textarea>
       </label>
+      <label>
+        Image
+        <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.webp">
+      </label>
+      {% if post and post.image_stored_name %}
+        <img
+          class="section-illustration"
+          src="{{ url_for('post_image_file', stored_name=post.image_stored_name) }}"
+          alt="{{ post.title }}"
+        >
+      {% endif %}
       <p class="summary-note">
         Automatic posting now targets a Facebook Page when the live Meta Page credentials are configured.
         Group sharing still needs manual copy because Meta deprecated the old group publishing permission.

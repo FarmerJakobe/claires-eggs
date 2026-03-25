@@ -58,6 +58,7 @@ from .utils import cents_to_dollars, dollars_to_cents
 
 PUBLIC_VISIT_PATH_PREFIXES = ("/admin", "/static", "/healthz", "/webhooks")
 ALLOWED_RECEIPT_EXTENSIONS = {".jpg", ".jpeg", ".pdf", ".png", ".webp"}
+ALLOWED_POST_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 def create_app() -> Flask:
@@ -149,6 +150,14 @@ def create_app() -> Flask:
         database = get_db()
         database.execute("SELECT 1").fetchone()
         return {"status": "ok"}, 200
+
+    @app.route("/media/posts/<stored_name>")
+    def post_image_file(stored_name: str):
+        return send_from_directory(
+            app.config["POSTS_UPLOAD_DIR"],
+            stored_name,
+            as_attachment=False,
+        )
 
     @app.route("/orders", methods=["GET", "POST"])
     def orders():
@@ -294,6 +303,7 @@ def create_app() -> Flask:
             visit_chart_max=visit_chart_max,
             popular_pages=list_popular_pages(database),
             receipt_upload_accept=",".join(sorted(ALLOWED_RECEIPT_EXTENSIONS)),
+            post_upload_accept=",".join(sorted(ALLOWED_POST_IMAGE_EXTENSIONS)),
             today=local_now().date().isoformat(),
         )
 
@@ -417,16 +427,63 @@ def create_app() -> Flask:
             mimetype=expense["receipt_content_type"] or None,
         )
 
+    @app.route("/admin/notices/new", methods=["POST"])
+    @admin_required
+    def admin_notice_new():
+        database = get_db()
+        notice_image = request.files.get("notice_image")
+        stored_name = None
+        try:
+            form_data = build_notice_form_data(request.form)
+            if notice_image and notice_image.filename:
+                stored_name = save_post_image(
+                    notice_image, app.config["POSTS_UPLOAD_DIR"]
+                )
+                form_data["image_original_name"] = notice_image.filename
+                form_data["image_stored_name"] = stored_name
+                form_data["image_content_type"] = notice_image.content_type or ""
+            save_post(database, form_data)
+        except (StoreError, ValueError) as exc:
+            database.rollback()
+            if stored_name:
+                remove_post_image(app.config["POSTS_UPLOAD_DIR"], stored_name)
+            flash(str(exc), "error")
+        except Exception:
+            database.rollback()
+            if stored_name:
+                remove_post_image(app.config["POSTS_UPLOAD_DIR"], stored_name)
+            flash("We could not save that notice.", "error")
+        else:
+            database.commit()
+            flash("Notice board post published.", "success")
+        return redirect(url_for("admin_dashboard"))
+
     @app.route("/admin/news/new", methods=["GET", "POST"])
     @admin_required
     def admin_news_new():
         if request.method == "POST":
             database = get_db()
-            form_data = normalize_form(request.form)
+            image_file = request.files.get("image_file")
+            stored_name = None
             try:
+                form_data = normalize_form(request.form)
+                if image_file and image_file.filename:
+                    stored_name = save_post_image(
+                        image_file, app.config["POSTS_UPLOAD_DIR"]
+                    )
+                    form_data["image_original_name"] = image_file.filename
+                    form_data["image_stored_name"] = stored_name
+                    form_data["image_content_type"] = image_file.content_type or ""
                 save_post(database, form_data)
             except StoreError as exc:
                 database.rollback()
+                if stored_name:
+                    remove_post_image(app.config["POSTS_UPLOAD_DIR"], stored_name)
+                flash(str(exc), "error")
+            except ValueError as exc:
+                database.rollback()
+                if stored_name:
+                    remove_post_image(app.config["POSTS_UPLOAD_DIR"], stored_name)
                 flash(str(exc), "error")
             else:
                 database.commit()
@@ -442,11 +499,27 @@ def create_app() -> Flask:
         if not post:
             abort(404)
         if request.method == "POST":
-            form_data = normalize_form(request.form)
+            image_file = request.files.get("image_file")
+            stored_name = None
             try:
+                form_data = normalize_form(request.form)
+                if image_file and image_file.filename:
+                    stored_name = save_post_image(
+                        image_file, app.config["POSTS_UPLOAD_DIR"]
+                    )
+                    form_data["image_original_name"] = image_file.filename
+                    form_data["image_stored_name"] = stored_name
+                    form_data["image_content_type"] = image_file.content_type or ""
                 save_post(database, form_data, post_id=post_id)
             except StoreError as exc:
                 database.rollback()
+                if stored_name:
+                    remove_post_image(app.config["POSTS_UPLOAD_DIR"], stored_name)
+                flash(str(exc), "error")
+            except ValueError as exc:
+                database.rollback()
+                if stored_name:
+                    remove_post_image(app.config["POSTS_UPLOAD_DIR"], stored_name)
                 flash(str(exc), "error")
             else:
                 database.commit()
@@ -499,3 +572,42 @@ def remove_receipt_upload(upload_dir: str, stored_name: str) -> None:
     target_path = Path(upload_dir) / stored_name
     if target_path.exists():
         target_path.unlink()
+
+
+def save_post_image(image_file, upload_dir: str) -> str:
+    original_name = secure_filename(image_file.filename or "")
+    extension = Path(original_name).suffix.lower()
+    if extension not in ALLOWED_POST_IMAGE_EXTENSIONS:
+        raise ValueError("Notice images must be PNG, JPG, or WEBP.")
+
+    target_dir = Path(upload_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    stored_name = f"{uuid4().hex}{extension}"
+    image_file.save(target_dir / stored_name)
+    return stored_name
+
+
+def remove_post_image(upload_dir: str, stored_name: str) -> None:
+    target_path = Path(upload_dir) / stored_name
+    if target_path.exists():
+        target_path.unlink()
+
+
+def build_notice_form_data(form_data):
+    message = form_data.get("message", "").strip()
+    if not message:
+        raise ValueError("Notice message is required.")
+
+    title = message.splitlines()[0].strip()[:72]
+    if len(message.splitlines()[0].strip()) > 72:
+        title = f"{title.rstrip()}..."
+
+    excerpt = message.replace("\r", " ").replace("\n", " ").strip()[:160]
+    return {
+        "title": title or "Farm notice",
+        "excerpt": excerpt or message[:160],
+        "body": message,
+        "is_published": "1",
+        "publish_to_facebook": "1" if form_data.get("publish_to_facebook") else "",
+        "facebook_message": message,
+    }

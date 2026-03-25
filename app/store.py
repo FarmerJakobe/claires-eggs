@@ -304,6 +304,9 @@ def save_post(database: sqlite3.Connection, form_data: dict, post_id: int | None
     facebook_message = form_data["facebook_message"].strip() or excerpt
     now = local_now().isoformat()
     slug = slugify(title)
+    image_original_name = form_data.get("image_original_name")
+    image_stored_name = form_data.get("image_stored_name")
+    image_content_type = form_data.get("image_content_type")
 
     if post_id:
         existing = get_post(database, post_id)
@@ -317,6 +320,7 @@ def save_post(database: sqlite3.Connection, form_data: dict, post_id: int | None
             UPDATE posts
             SET title = ?, slug = ?, excerpt = ?, body = ?, is_published = ?,
                 publish_to_facebook = ?, facebook_message = ?, facebook_status = ?, facebook_last_error = ?,
+                image_original_name = ?, image_stored_name = ?, image_content_type = ?,
                 updated_at = ?, published_at = ?
             WHERE id = ?
             """,
@@ -330,6 +334,9 @@ def save_post(database: sqlite3.Connection, form_data: dict, post_id: int | None
                 facebook_message,
                 existing["facebook_status"] if publish_to_facebook else "not-requested",
                 "" if not publish_to_facebook else existing["facebook_last_error"],
+                image_original_name or existing["image_original_name"],
+                image_stored_name or existing["image_stored_name"],
+                image_content_type or existing["image_content_type"],
                 now,
                 published_at,
                 post_id,
@@ -342,8 +349,9 @@ def save_post(database: sqlite3.Connection, form_data: dict, post_id: int | None
             """
             INSERT INTO posts (
                 title, slug, excerpt, body, is_published, publish_to_facebook,
-                facebook_status, facebook_message, created_at, updated_at, published_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                facebook_status, facebook_message, image_original_name, image_stored_name,
+                image_content_type, created_at, updated_at, published_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 title,
@@ -354,6 +362,9 @@ def save_post(database: sqlite3.Connection, form_data: dict, post_id: int | None
                 publish_to_facebook,
                 "queued" if (is_published and publish_to_facebook) else "not-requested",
                 facebook_message,
+                image_original_name,
+                image_stored_name,
+                image_content_type,
                 now,
                 now,
                 now if is_published else None,

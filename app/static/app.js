@@ -6,7 +6,7 @@ function calculateCardFee(subtotal) {
   return Math.round(subtotal * 0.1);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function wireOrderSummary() {
   const orderForm = document.querySelector("[data-order-form]");
   if (!orderForm) {
     return;
@@ -38,4 +38,28 @@ document.addEventListener("DOMContentLoaded", () => {
   orderForm.addEventListener("input", updateSummary);
   orderForm.addEventListener("change", updateSummary);
   updateSummary();
+}
+
+function wireCopyButtons() {
+  document.querySelectorAll("[data-copy-text]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const originalLabel = button.textContent;
+      const copyText = button.dataset.copyText || "";
+      try {
+        await navigator.clipboard.writeText(copyText);
+        button.textContent = "Copied";
+      } catch (error) {
+        button.textContent = "Copy failed";
+      }
+
+      window.setTimeout(() => {
+        button.textContent = originalLabel;
+      }, 1800);
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  wireOrderSummary();
+  wireCopyButtons();
 });

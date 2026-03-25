@@ -25,6 +25,9 @@ def load_config() -> dict:
         "RECEIPTS_UPLOAD_DIR": os.environ.get(
             "RECEIPTS_UPLOAD_DIR", str(database_path.parent / "receipts")
         ),
+        "POSTS_UPLOAD_DIR": os.environ.get(
+            "POSTS_UPLOAD_DIR", str(database_path.parent / "posts")
+        ),
         "SITE_URL": os.environ.get("SITE_URL", "").rstrip("/"),
         "PAYMENT_MODE": os.environ.get("PAYMENT_MODE", "demo").lower(),
         "STRIPE_SECRET_KEY": os.environ.get("STRIPE_SECRET_KEY", ""),

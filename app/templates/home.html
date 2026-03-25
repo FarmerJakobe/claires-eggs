@@ -98,19 +98,27 @@
     <article class="card card-illustrated">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Latest news</p>
-          <h2>From Claire's farm</h2>
+          <p class="eyebrow">Notice board</p>
+          <h2>Fresh from Claire's farm</h2>
         </div>
         <a class="text-link" href="{{ url_for('news') }}">All news</a>
       </div>
-      <img
-        class="section-illustration"
-        src="{{ url_for('static', filename='images/hitching-post.png', v='20260310g') }}"
-        alt="Claire's Eggs stand at the Hitching Post in Crawford"
-      >
       <div class="post-list compact">
         {% for post in posts %}
           <a class="post-card" href="{{ url_for('news_detail', slug=post.slug) }}">
+            {% if post.image_stored_name %}
+              <img
+                class="section-illustration"
+                src="{{ url_for('post_image_file', stored_name=post.image_stored_name) }}"
+                alt="{{ post.title }}"
+              >
+            {% else %}
+              <img
+                class="section-illustration"
+                src="{{ url_for('static', filename='images/hitching-post.png', v='20260310g') }}"
+                alt="Claire's Eggs stand at the Hitching Post in Crawford"
+              >
+            {% endif %}
             <span class="post-date">{{ post.published_at[:10] if post.published_at else post.created_at[:10] }}</span>
             <h3>{{ post.title }}</h3>
             <p>{{ post.excerpt }}</p>

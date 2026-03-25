@@ -28,7 +28,7 @@ def publish_post(post: dict, config: dict) -> FacebookSyncResult:
     if mode == "manual":
         return FacebookSyncResult(
             "manual",
-            "Manual Facebook copy is ready for posting.",
+            "Ready for manual posting into the Facebook Group.",
         )
 
     if mode in {"page", "live"}:

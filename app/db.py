@@ -161,6 +161,7 @@ def init_app(app) -> None:
 def init_db() -> None:
     database = get_db()
     database.executescript(SCHEMA)
+    ensure_posts_columns(database)
     seed_demo_data(database)
     database.commit()
 
@@ -247,4 +248,23 @@ def seed_demo_data(database: sqlite3.Connection) -> None:
                 now,
                 now,
             ),
+        )
+
+
+def ensure_posts_columns(database: sqlite3.Connection) -> None:
+    columns = {
+        row["name"]
+        for row in database.execute("PRAGMA table_info(posts)").fetchall()
+    }
+    missing_columns = {
+        "image_original_name": "TEXT",
+        "image_stored_name": "TEXT",
+        "image_content_type": "TEXT",
+    }
+
+    for column_name, column_type in missing_columns.items():
+        if column_name in columns:
+            continue
+        database.execute(
+            f"ALTER TABLE posts ADD COLUMN {column_name} {column_type}"
         )

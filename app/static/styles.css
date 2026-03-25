@@ -610,6 +610,19 @@ fieldset {
   gap: 0.15rem;
 }
 
+.notice-card {
+  align-items: start;
+}
+
+.notice-thumb {
+  width: 100%;
+  max-width: 180px;
+  margin-bottom: 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(29, 36, 48, 0.08);
+  object-fit: cover;
+}
+
 .notice-board-actions {
   display: flex;
   flex-wrap: wrap;

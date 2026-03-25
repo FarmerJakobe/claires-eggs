@@ -295,22 +295,62 @@
     <article class="card">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">News</p>
-          <h2>Announcements</h2>
+          <p class="eyebrow">Notice board</p>
+          <h2>Post a quick update</h2>
         </div>
         <a class="button button-secondary" href="{{ url_for('admin_news_new') }}">New post</a>
       </div>
+      <form class="stack-form" method="post" action="{{ url_for('admin_notice_new') }}" enctype="multipart/form-data">
+        <label>
+          Notice message
+          <textarea name="message" rows="5" placeholder="Fresh eggs are packed. Claire will be at the Hitching Post from 3 PM to 4 PM." required></textarea>
+        </label>
+        <label>
+          Notice image
+          <input type="file" name="notice_image" accept="{{ post_upload_accept }}">
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" name="publish_to_facebook" value="1" checked>
+          Prepare this notice for the Facebook Group too
+        </label>
+        <div class="form-actions">
+          <span class="summary-note">
+            Website posting is automatic. Facebook Group posting stays manual because Meta no longer supports direct app posting into Groups.
+          </span>
+          <button class="button button-primary" type="submit">Post notice</button>
+        </div>
+      </form>
       <div class="table-stack">
         {% for post in posts %}
-          <div class="admin-row">
+          <div class="admin-row notice-card">
             <div>
+              {% if post.image_stored_name %}
+                <img
+                  class="notice-thumb"
+                  src="{{ url_for('post_image_file', stored_name=post.image_stored_name) }}"
+                  alt="{{ post.title }}"
+                >
+              {% endif %}
               <strong>{{ post.title }}</strong>
               <p>{{ "Published" if post.is_published else "Draft" }} | Facebook: {{ post.facebook_status.replace('-', ' ')|title }}</p>
+              <p>{{ post.excerpt }}</p>
               {% if post.facebook_last_error %}
                 <p class="summary-note">{{ post.facebook_last_error }}</p>
               {% endif %}
             </div>
             <div class="admin-actions">
+              {% if post.publish_to_facebook %}
+                <button
+                  class="text-button"
+                  type="button"
+                  data-copy-text="{{ ((post.facebook_message ~ '\n\n' ~ url_for('news_detail', slug=post.slug, _external=True)) if post.is_published else post.facebook_message)|e }}"
+                >
+                  Copy For FB Group
+                </button>
+              {% endif %}
+              {% if post.image_stored_name %}
+                <a class="text-link" href="{{ url_for('post_image_file', stored_name=post.image_stored_name) }}" target="_blank" rel="noopener noreferrer">Open image</a>
+              {% endif %}
               <a class="text-link" href="{{ url_for('admin_news_edit', post_id=post.id) }}">Edit</a>
               <form method="post" action="{{ url_for('admin_news_facebook', post_id=post.id) }}">
                 <button class="text-button" type="submit">Sync Facebook</button>
