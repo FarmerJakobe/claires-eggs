@@ -425,6 +425,15 @@ def list_contact_messages(database: sqlite3.Connection):
     ).fetchall()
 
 
+def delete_contact_message(database: sqlite3.Connection, message_id: int) -> None:
+    cursor = database.execute(
+        "DELETE FROM contact_messages WHERE id = ?",
+        (message_id,),
+    )
+    if cursor.rowcount == 0:
+        raise StoreError("Message not found.")
+
+
 def record_website_visit(
     database: sqlite3.Connection, path: str, visitor_token: str
 ) -> None:

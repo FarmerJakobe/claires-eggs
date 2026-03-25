@@ -29,6 +29,7 @@ from .store import (
     StoreError,
     create_sales_entry,
     create_inventory_item,
+    delete_contact_message,
     get_expense_receipt,
     get_financial_summary,
     get_order,
@@ -539,6 +540,20 @@ def create_app() -> Flask:
         else:
             database.commit()
             flash("Facebook sync action recorded.", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    @app.route("/admin/messages/<int:message_id>/delete", methods=["POST"])
+    @admin_required
+    def admin_message_delete(message_id: int):
+        database = get_db()
+        try:
+            delete_contact_message(database, message_id)
+        except StoreError as exc:
+            database.rollback()
+            flash(str(exc), "error")
+        else:
+            database.commit()
+            flash("Message deleted.", "success")
         return redirect(url_for("admin_dashboard"))
 
     return app

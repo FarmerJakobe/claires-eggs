@@ -251,6 +251,44 @@ class ClaireEggsTestCase(unittest.TestCase):
             )
         self.assertTrue(os.path.exists(image_path))
 
+    def test_admin_can_delete_contact_message(self):
+        with self.app.app_context():
+            database = get_db()
+            database.execute(
+                """
+                INSERT INTO contact_messages (name, email, phone, message, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    "Spam Caller",
+                    "spam@example.com",
+                    "555-9999",
+                    "Please call me about crypto.",
+                    "2026-03-24T12:00:00-06:00",
+                ),
+            )
+            database.commit()
+            message_id = database.execute(
+                "SELECT id FROM contact_messages ORDER BY id DESC LIMIT 1"
+            ).fetchone()["id"]
+
+        self.login_admin()
+
+        response = self.client.post(
+            f"/admin/messages/{message_id}/delete",
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Message deleted.", response.data)
+
+        with self.app.app_context():
+            database = get_db()
+            remaining = database.execute(
+                "SELECT id FROM contact_messages WHERE id = ?",
+                (message_id,),
+            ).fetchone()
+        self.assertIsNone(remaining)
+
     def test_confirmed_and_fulfilled_statuses_work_for_cash_orders(self):
         order_id = self.create_test_order()
         self.login_admin()

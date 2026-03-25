@@ -378,6 +378,9 @@
               <p>{{ message.email }} | {{ message.phone }}</p>
               <p>{{ message.message }}</p>
             </div>
+            <form method="post" action="{{ url_for('admin_message_delete', message_id=message.id) }}">
+              <button class="text-button" type="submit">Delete</button>
+            </form>
           </div>
         {% else %}
           <p>No messages yet.</p>
