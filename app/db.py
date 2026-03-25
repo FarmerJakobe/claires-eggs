@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_name TEXT NOT NULL,
     email TEXT NOT NULL,
     phone TEXT NOT NULL,
+    zip_code TEXT NOT NULL,
     payment_method TEXT NOT NULL,
     payment_status TEXT NOT NULL,
     order_status TEXT NOT NULL,
@@ -161,6 +162,7 @@ def init_app(app) -> None:
 def init_db() -> None:
     database = get_db()
     database.executescript(SCHEMA)
+    ensure_orders_columns(database)
     ensure_posts_columns(database)
     seed_demo_data(database)
     database.commit()
@@ -267,4 +269,16 @@ def ensure_posts_columns(database: sqlite3.Connection) -> None:
             continue
         database.execute(
             f"ALTER TABLE posts ADD COLUMN {column_name} {column_type}"
+        )
+
+
+def ensure_orders_columns(database: sqlite3.Connection) -> None:
+    columns = {
+        row["name"]
+        for row in database.execute("PRAGMA table_info(orders)").fetchall()
+    }
+
+    if "zip_code" not in columns:
+        database.execute(
+            "ALTER TABLE orders ADD COLUMN zip_code TEXT NOT NULL DEFAULT ''"
         )

@@ -57,7 +57,20 @@
           Phone
           <input type="tel" name="phone" required>
         </label>
+        <label>
+          ZIP code
+          <input
+            type="text"
+            name="zip_code"
+            inputmode="numeric"
+            pattern="[0-9]{5}"
+            maxlength="5"
+            placeholder="81416"
+            required
+          >
+        </label>
       </div>
+      <p class="summary-note">Reservations are limited to Delta County and Montrose County ZIP codes.</p>
 
       <fieldset class="payment-choice">
         <legend>Payment method</legend>

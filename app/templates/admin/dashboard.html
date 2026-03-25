@@ -254,7 +254,7 @@
           <div class="admin-row order-row">
             <div>
               <strong>#{{ order.id }} | {{ order.customer_name }}</strong>
-              <p>{{ order.email }} | {{ order.phone }}</p>
+              <p>{{ order.email }} | {{ order.phone }} | ZIP {{ order.zip_code or "Not saved" }}</p>
               <p>
                 {{ order.payment_method|title }} | {{ order.payment_status.replace('_', ' ')|title }} |
                 {{ order.order_status.replace('_', ' ')|title }} | {{ order.total_cents|money }}

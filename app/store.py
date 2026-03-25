@@ -11,7 +11,12 @@ from .config import card_payments_enabled
 from .facebook import publish_post
 from .payments import create_payment
 from .schedule import local_now, next_pickup_window
-from .utils import card_fee_cents, slugify
+from .utils import (
+    DELTA_AND_MONTROSE_ZIP_CODES,
+    card_fee_cents,
+    normalize_zip_code,
+    slugify,
+)
 
 
 class StoreError(Exception):
@@ -649,11 +654,19 @@ def place_order(database: sqlite3.Connection, form_data: dict) -> int:
     customer_name = form_data["customer_name"].strip()
     email = form_data["email"].strip()
     phone = form_data["phone"].strip()
+    try:
+        zip_code = normalize_zip_code(form_data.get("zip_code", ""))
+    except ValueError as exc:
+        raise StoreError(str(exc)) from exc
     payment_method = form_data["payment_method"]
     notes = form_data.get("notes", "").strip()
 
-    if not customer_name or not email or not phone:
-        raise StoreError("Name, email, and phone are required.")
+    if not customer_name or not email or not phone or not zip_code:
+        raise StoreError("Name, email, phone, and ZIP code are required.")
+    if zip_code not in DELTA_AND_MONTROSE_ZIP_CODES:
+        raise StoreError(
+            "Reservations are only available for Delta County or Montrose County ZIP codes."
+        )
     if payment_method not in {"cash", "card"}:
         raise StoreError("Choose either cash or card.")
     if payment_method == "card" and not card_payments_enabled(current_app.config):
@@ -690,15 +703,16 @@ def place_order(database: sqlite3.Connection, form_data: dict) -> int:
         cursor = database.execute(
             """
             INSERT INTO orders (
-                customer_name, email, phone, payment_method, payment_status, order_status,
+                customer_name, email, phone, zip_code, payment_method, payment_status, order_status,
                 pickup_date, pickup_window, subtotal_cents, fee_cents, total_cents,
                 notes, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 customer_name,
                 email,
                 phone,
+                zip_code,
                 payment_method,
                 payment_status,
                 "open",

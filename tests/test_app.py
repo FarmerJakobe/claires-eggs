@@ -71,6 +71,7 @@ class ClaireEggsTestCase(unittest.TestCase):
                 "customer_name": "Test Customer",
                 "email": "test@example.com",
                 "phone": "555-1212",
+                "zip_code": "81416",
                 "payment_method": "cash",
                 f"item_{item_id}": "2",
             },
@@ -218,8 +219,34 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"test@example.com", response.data)
         self.assertIn(b"555-1212", response.data)
+        self.assertIn(b"ZIP 81416", response.data)
         self.assertIn(b"Confirm", response.data)
         self.assertIn(b"Fulfilled", response.data)
+
+    def test_order_rejects_zip_codes_outside_local_counties(self):
+        with self.app.app_context():
+            database = get_db()
+            item = database.execute(
+                "SELECT * FROM inventory_items ORDER BY id ASC LIMIT 1"
+            ).fetchone()
+
+        response = self.client.post(
+            "/orders",
+            data={
+                "customer_name": "Outside Customer",
+                "email": "outside@example.com",
+                "phone": "555-0000",
+                "zip_code": "80202",
+                "payment_method": "cash",
+                f"item_{item['id']}": "1",
+            },
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b"Reservations are only available for Delta County or Montrose County ZIP codes.",
+            response.data,
+        )
 
     def test_admin_can_post_notice_with_image(self):
         self.login_admin()
@@ -340,15 +367,16 @@ class ClaireEggsTestCase(unittest.TestCase):
             cursor = database.execute(
                 """
                 INSERT INTO orders (
-                    customer_name, email, phone, payment_method, payment_status, order_status,
+                    customer_name, email, phone, zip_code, payment_method, payment_status, order_status,
                     pickup_date, pickup_window, subtotal_cents, fee_cents, total_cents,
                     notes, created_at, updated_at, stripe_reference, stripe_checkout_url
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     "Test Customer",
                     "test@example.com",
                     "555-1212",
+                    "81416",
                     payment_method,
                     payment_status,
                     order_status,
