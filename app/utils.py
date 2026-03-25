@@ -27,6 +27,7 @@ DELTA_AND_MONTROSE_ZIP_CODES = frozenset(
         "81428",
         "81429",
         "81431",
+        "81434",
     }
 )
 
