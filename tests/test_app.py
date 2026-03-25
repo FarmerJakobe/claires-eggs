@@ -221,8 +221,23 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertIn(b"test@example.com", response.data)
         self.assertIn(b"555-1212", response.data)
         self.assertIn(b"ZIP 81416", response.data)
+        self.assertIn(b"Pickup choice:</strong> Hitching Post", response.data)
         self.assertIn(b"Confirm", response.data)
         self.assertIn(b"Fulfilled", response.data)
+
+    def test_dashboard_shows_farm_pickup_choice(self):
+        self.create_test_order(
+            pickup_type="farm",
+            pickup_location="Farm pickup",
+            pickup_date="",
+            pickup_window="Claire will contact you to arrange pickup.",
+        )
+        self.login_admin()
+
+        response = self.client.get("/admin")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Pickup choice:</strong> Farm pickup", response.data)
+        self.assertIn(b"Claire will contact you to arrange pickup.", response.data)
 
     def test_order_rejects_zip_codes_outside_local_counties(self):
         with self.app.app_context():
@@ -396,7 +411,16 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Admin dashboard", response.data)
 
-    def create_test_order(self, payment_method="cash", payment_status="reserved", order_status="open"):
+    def create_test_order(
+        self,
+        payment_method="cash",
+        payment_status="reserved",
+        order_status="open",
+        pickup_type="market",
+        pickup_location="Hitching Post, Crawford, Colorado",
+        pickup_date="2026-03-11",
+        pickup_window="3:00 PM - 4:30 PM MDT",
+    ):
         with self.app.app_context():
             database = get_db()
             cursor = database.execute(
@@ -413,13 +437,13 @@ class ClaireEggsTestCase(unittest.TestCase):
                     "test@example.com",
                     "555-1212",
                     "81416",
-                    "market",
-                    "Hitching Post, Crawford, Colorado",
+                    pickup_type,
+                    pickup_location,
                     payment_method,
                     payment_status,
                     order_status,
-                    "2026-03-11",
-                    "3:00 PM - 4:30 PM MDT",
+                    pickup_date,
+                    pickup_window,
                     650,
                     65 if payment_method == "card" else 0,
                     715 if payment_method == "card" else 650,
