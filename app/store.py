@@ -216,6 +216,12 @@ def update_order_status(database: sqlite3.Connection, order_id: int, new_status:
     if not order_bundle:
         raise StoreError("Order not found.")
 
+    if new_status == "picked_up":
+        new_status = "fulfilled"
+
+    if new_status not in {"open", "confirmed", "fulfilled", "cancelled"}:
+        raise StoreError("Invalid order status.")
+
     order = order_bundle["order"]
     if order["order_status"] == new_status:
         return
@@ -240,7 +246,7 @@ def update_order_status(database: sqlite3.Connection, order_id: int, new_status:
             )
 
     payment_status = order["payment_status"]
-    if new_status == "picked_up" and order["payment_method"] == "cash":
+    if new_status == "fulfilled" and order["payment_method"] == "cash":
         payment_status = "paid_in_person"
 
     database.execute(

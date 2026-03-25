@@ -246,7 +246,7 @@
       <div class="section-heading">
         <div>
           <p class="eyebrow">Orders</p>
-          <h2>Recent reservations</h2>
+          <h2>Reservation notice board</h2>
         </div>
       </div>
       <div class="table-stack">
@@ -254,21 +254,37 @@
           <div class="admin-row order-row">
             <div>
               <strong>#{{ order.id }} | {{ order.customer_name }}</strong>
-              <p>{{ order.payment_method|title }} | {{ order.payment_status.replace('_', ' ')|title }} | {{ order.total_cents|money }}</p>
+              <p>{{ order.email }} | {{ order.phone }}</p>
+              <p>
+                {{ order.payment_method|title }} | {{ order.payment_status.replace('_', ' ')|title }} |
+                {{ order.order_status.replace('_', ' ')|title }} | {{ order.total_cents|money }}
+              </p>
               <p>
                 {% for item in order_items.get(order.id, []) %}
                   {{ item.quantity }}x {{ item.inventory_name }}{% if not loop.last %}, {% endif %}
                 {% endfor %}
               </p>
             </div>
-            <form method="post" action="{{ url_for('admin_order_status', order_id=order.id) }}">
-              <select name="order_status">
-                {% for status in ["open", "picked_up", "cancelled"] %}
-                  <option value="{{ status }}" {% if order.order_status == status %}selected{% endif %}>{{ status.replace('_', ' ')|title }}</option>
-                {% endfor %}
-              </select>
-              <button class="button button-secondary" type="submit">Update</button>
-            </form>
+            <div class="notice-board-actions">
+              {% if order.order_status == "open" %}
+                <form method="post" action="{{ url_for('admin_order_status', order_id=order.id) }}">
+                  <input type="hidden" name="order_status" value="confirmed">
+                  <button class="button button-secondary" type="submit">Confirm</button>
+                </form>
+              {% endif %}
+              {% if order.order_status in ["open", "confirmed"] %}
+                <form method="post" action="{{ url_for('admin_order_status', order_id=order.id) }}">
+                  <input type="hidden" name="order_status" value="fulfilled">
+                  <button class="button button-primary" type="submit">Fulfilled</button>
+                </form>
+              {% endif %}
+              {% if order.order_status != "cancelled" and order.order_status != "fulfilled" %}
+                <form method="post" action="{{ url_for('admin_order_status', order_id=order.id) }}">
+                  <input type="hidden" name="order_status" value="cancelled">
+                  <button class="text-button" type="submit">Cancel</button>
+                </form>
+              {% endif %}
+            </div>
           </div>
         {% else %}
           <p>No orders yet.</p>

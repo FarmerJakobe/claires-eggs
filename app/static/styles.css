@@ -610,6 +610,13 @@ fieldset {
   gap: 0.15rem;
 }
 
+.notice-board-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.65rem;
+}
+
 .admin-row {
   align-items: center;
 }

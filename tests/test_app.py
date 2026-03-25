@@ -210,6 +210,53 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertEqual(receipt_response.status_code, 200)
         receipt_response.close()
 
+    def test_dashboard_shows_reservation_contact_info_and_actions(self):
+        order_id = self.create_test_order()
+        self.login_admin()
+
+        response = self.client.get("/admin")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"test@example.com", response.data)
+        self.assertIn(b"555-1212", response.data)
+        self.assertIn(b"Confirm", response.data)
+        self.assertIn(b"Fulfilled", response.data)
+
+    def test_confirmed_and_fulfilled_statuses_work_for_cash_orders(self):
+        order_id = self.create_test_order()
+        self.login_admin()
+
+        response = self.client.post(
+            f"/admin/orders/{order_id}/status",
+            data={"order_status": "confirmed"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        with self.app.app_context():
+            database = get_db()
+            order = database.execute(
+                "SELECT order_status, payment_status FROM orders WHERE id = ?",
+                (order_id,),
+            ).fetchone()
+        self.assertEqual(order["order_status"], "confirmed")
+        self.assertEqual(order["payment_status"], "reserved")
+
+        response = self.client.post(
+            f"/admin/orders/{order_id}/status",
+            data={"order_status": "fulfilled"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        with self.app.app_context():
+            database = get_db()
+            order = database.execute(
+                "SELECT order_status, payment_status FROM orders WHERE id = ?",
+                (order_id,),
+            ).fetchone()
+        self.assertEqual(order["order_status"], "fulfilled")
+        self.assertEqual(order["payment_status"], "paid_in_person")
+
     def login_admin(self):
         response = self.client.post(
             "/admin/login",
@@ -219,7 +266,7 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Admin dashboard", response.data)
 
-    def create_test_order(self, payment_method="cash", payment_status="reserved"):
+    def create_test_order(self, payment_method="cash", payment_status="reserved", order_status="open"):
         with self.app.app_context():
             database = get_db()
             cursor = database.execute(
@@ -236,7 +283,7 @@ class ClaireEggsTestCase(unittest.TestCase):
                     "555-1212",
                     payment_method,
                     payment_status,
-                    "open",
+                    order_status,
                     "2026-03-11",
                     "3:00 PM - 4:00 PM MDT",
                     650,
