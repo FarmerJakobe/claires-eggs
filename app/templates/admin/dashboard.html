@@ -283,7 +283,7 @@
               {% if order.order_status != "cancelled" and order.order_status != "fulfilled" %}
                 <form method="post" action="{{ url_for('admin_order_status', order_id=order.id) }}">
                   <input type="hidden" name="order_status" value="cancelled">
-                  <button class="text-button" type="submit">Cancel</button>
+                  <button class="text-button" type="submit">Cancel + Restock</button>
                 </form>
               {% endif %}
             </div>

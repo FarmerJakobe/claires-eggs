@@ -224,6 +224,7 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertIn(b"Pickup choice:</strong> Hitching Post", response.data)
         self.assertIn(b"Confirm", response.data)
         self.assertIn(b"Fulfilled", response.data)
+        self.assertIn(b"Cancel + Restock", response.data)
 
     def test_dashboard_shows_farm_pickup_choice(self):
         self.create_test_order(
@@ -401,6 +402,65 @@ class ClaireEggsTestCase(unittest.TestCase):
             ).fetchone()
         self.assertEqual(order["order_status"], "fulfilled")
         self.assertEqual(order["payment_status"], "paid_in_person")
+
+    def test_cancelled_order_returns_inventory(self):
+        with self.app.app_context():
+            database = get_db()
+            item = database.execute(
+                "SELECT * FROM inventory_items ORDER BY id ASC LIMIT 1"
+            ).fetchone()
+            item_id = item["id"]
+            starting_quantity = item["quantity_available"]
+
+        response = self.client.post(
+            "/orders",
+            data={
+                "customer_name": "Cancel Test",
+                "email": "cancel@example.com",
+                "phone": "555-8888",
+                "zip_code": "81416",
+                "pickup_type": "market",
+                "payment_method": "cash",
+                f"item_{item_id}": "1",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 302)
+        order_id = int(response.headers["Location"].split("/orders/")[1].split("/")[0])
+
+        self.login_admin()
+        response = self.client.post(
+            f"/admin/orders/{order_id}/status",
+            data={"order_status": "cancelled"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"cancelled and stock returned to inventory", response.data)
+
+        with self.app.app_context():
+            database = get_db()
+            order = database.execute(
+                "SELECT order_status FROM orders WHERE id = ?",
+                (order_id,),
+            ).fetchone()
+            updated = database.execute(
+                "SELECT quantity_available FROM inventory_items WHERE id = ?",
+                (item_id,),
+            ).fetchone()
+            movement = database.execute(
+                """
+                SELECT delta, reason
+                FROM inventory_movements
+                WHERE inventory_item_id = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (item_id,),
+            ).fetchone()
+        self.assertEqual(order["order_status"], "cancelled")
+        self.assertEqual(updated["quantity_available"], starting_quantity)
+        self.assertEqual(movement["delta"], 1)
+        self.assertIn("cancelled", movement["reason"])
 
     def login_admin(self):
         response = self.client.post(

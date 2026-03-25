@@ -364,7 +364,10 @@ def create_app() -> Flask:
             flash(str(exc), "error")
         else:
             database.commit()
-            flash(f"Order #{order_id} updated to {new_status}.", "success")
+            if new_status == "cancelled":
+                flash(f"Order #{order_id} cancelled and stock returned to inventory.", "success")
+            else:
+                flash(f"Order #{order_id} updated to {new_status}.", "success")
         return redirect(url_for("admin_dashboard"))
 
     @app.route("/admin/sales/new", methods=["POST"])
