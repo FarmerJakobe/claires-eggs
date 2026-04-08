@@ -154,6 +154,9 @@
             <div class="admin-actions">
               <strong class="price">{{ sale.amount_cents|money }}</strong>
               <a class="text-link" href="{{ url_for('admin_sales_edit', sale_id=sale.id) }}">Edit</a>
+              <form method="post" action="{{ url_for('admin_sales_delete', sale_id=sale.id) }}">
+                <button class="text-button" type="submit">Delete</button>
+              </form>
             </div>
           </div>
         {% else %}

@@ -228,6 +228,46 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertEqual(sale["payment_method"], "card")
         self.assertEqual(sale["notes"], "Adjusted after recount.")
 
+    def test_admin_can_delete_manual_sale(self):
+        self.login_admin()
+
+        with self.app.app_context():
+            database = get_db()
+            database.execute(
+                """
+                INSERT INTO sales_entries (
+                    sale_date, title, amount_cents, payment_method, notes, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "2026-04-07",
+                    "Delete me",
+                    1200,
+                    "cash",
+                    "Temporary sale",
+                    "2026-04-07T09:30:00-06:00",
+                ),
+            )
+            database.commit()
+            sale_id = database.execute(
+                "SELECT id FROM sales_entries ORDER BY id DESC LIMIT 1"
+            ).fetchone()["id"]
+
+        response = self.client.post(
+            f"/admin/sales/{sale_id}/delete",
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Sale entry deleted.", response.data)
+
+        with self.app.app_context():
+            database = get_db()
+            sale = database.execute(
+                "SELECT * FROM sales_entries WHERE id = ?",
+                (sale_id,),
+            ).fetchone()
+        self.assertIsNone(sale)
+
     def test_admin_can_upload_expense_receipt(self):
         self.login_admin()
 

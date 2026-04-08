@@ -46,7 +46,12 @@
       </label>
       <div class="form-actions">
         <a class="button button-secondary" href="{{ url_for('admin_dashboard') }}">Back to dashboard</a>
-        <button class="button button-primary" type="submit">Save changes</button>
+        <div class="admin-actions">
+          <form method="post" action="{{ url_for('admin_sales_delete', sale_id=sale.id) }}">
+            <button class="text-button" type="submit">Delete</button>
+          </form>
+          <button class="button button-primary" type="submit">Save changes</button>
+        </div>
       </div>
     </form>
   </section>

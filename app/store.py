@@ -549,6 +549,15 @@ def update_sales_entry(database: sqlite3.Connection, sale_id: int, form_data: di
     )
 
 
+def delete_sales_entry(database: sqlite3.Connection, sale_id: int) -> None:
+    cursor = database.execute(
+        "DELETE FROM sales_entries WHERE id = ?",
+        (sale_id,),
+    )
+    if cursor.rowcount == 0:
+        raise StoreError("Sale entry not found.")
+
+
 def normalize_sales_entry(form_data: dict) -> tuple[str, str, int, str, str]:
     title = form_data.get("title", "").strip() or "Market sale"
     payment_method = form_data.get("payment_method", "cash").strip().lower()

@@ -29,6 +29,7 @@ from .store import (
     StoreError,
     create_sales_entry,
     create_inventory_item,
+    delete_sales_entry,
     delete_contact_message,
     get_expense_receipt,
     get_financial_summary,
@@ -411,6 +412,20 @@ def create_app() -> Flask:
             sale = get_sales_entry(database, sale_id)
 
         return render_template("admin/sales_form.html", sale=sale)
+
+    @app.route("/admin/sales/<int:sale_id>/delete", methods=["POST"])
+    @admin_required
+    def admin_sales_delete(sale_id: int):
+        database = get_db()
+        try:
+            delete_sales_entry(database, sale_id)
+        except StoreError as exc:
+            database.rollback()
+            flash(str(exc), "error")
+        else:
+            database.commit()
+            flash("Sale entry deleted.", "success")
+        return redirect(url_for("admin_dashboard"))
 
     @app.route("/admin/expenses/new", methods=["POST"])
     @admin_required
