@@ -514,6 +514,42 @@ def list_popular_pages(database: sqlite3.Connection, days: int = 30, limit: int 
 
 
 def create_sales_entry(database: sqlite3.Connection, form_data: dict) -> None:
+    title, sale_date, amount_cents, payment_method, notes = normalize_sales_entry(form_data)
+
+    database.execute(
+        """
+        INSERT INTO sales_entries (
+            sale_date, title, amount_cents, payment_method, notes, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (sale_date, title, amount_cents, payment_method, notes, local_now().isoformat()),
+    )
+
+
+def get_sales_entry(database: sqlite3.Connection, sale_id: int):
+    return database.execute(
+        "SELECT * FROM sales_entries WHERE id = ?",
+        (sale_id,),
+    ).fetchone()
+
+
+def update_sales_entry(database: sqlite3.Connection, sale_id: int, form_data: dict) -> None:
+    existing = get_sales_entry(database, sale_id)
+    if not existing:
+        raise StoreError("Sale entry not found.")
+
+    title, sale_date, amount_cents, payment_method, notes = normalize_sales_entry(form_data)
+    database.execute(
+        """
+        UPDATE sales_entries
+        SET sale_date = ?, title = ?, amount_cents = ?, payment_method = ?, notes = ?
+        WHERE id = ?
+        """,
+        (sale_date, title, amount_cents, payment_method, notes, sale_id),
+    )
+
+
+def normalize_sales_entry(form_data: dict) -> tuple[str, str, int, str, str]:
     title = form_data.get("title", "").strip() or "Market sale"
     payment_method = form_data.get("payment_method", "cash").strip().lower()
     amount_cents = int(form_data["amount_cents"])
@@ -524,15 +560,7 @@ def create_sales_entry(database: sqlite3.Connection, form_data: dict) -> None:
         raise StoreError("Sale amount must be greater than zero.")
     if payment_method not in {"cash", "card", "other"}:
         raise StoreError("Choose cash, card, or other for the sale.")
-
-    database.execute(
-        """
-        INSERT INTO sales_entries (
-            sale_date, title, amount_cents, payment_method, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (sale_date, title, amount_cents, payment_method, notes, local_now().isoformat()),
-    )
+    return title, sale_date, amount_cents, payment_method, notes
 
 
 def list_sales_entries(database: sqlite3.Connection, limit: int = 10):

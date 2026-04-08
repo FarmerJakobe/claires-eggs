@@ -176,6 +176,58 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertEqual(sale["title"], "Wednesday market")
         self.assertEqual(sale["amount_cents"], 4250)
 
+    def test_admin_can_edit_manual_sale(self):
+        self.login_admin()
+
+        with self.app.app_context():
+            database = get_db()
+            database.execute(
+                """
+                INSERT INTO sales_entries (
+                    sale_date, title, amount_cents, payment_method, notes, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "2026-04-07",
+                    "Original market sale",
+                    2500,
+                    "cash",
+                    "Initial note",
+                    "2026-04-07T09:00:00-06:00",
+                ),
+            )
+            database.commit()
+            sale_id = database.execute(
+                "SELECT id FROM sales_entries ORDER BY id DESC LIMIT 1"
+            ).fetchone()["id"]
+
+        response = self.client.post(
+            f"/admin/sales/{sale_id}/edit",
+            data={
+                "title": "Updated market sale",
+                "sale_date": "2026-04-08",
+                "amount": "31.75",
+                "payment_method": "card",
+                "notes": "Adjusted after recount.",
+            },
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Sale entry updated.", response.data)
+        self.assertIn(b"Edit", response.data)
+
+        with self.app.app_context():
+            database = get_db()
+            sale = database.execute(
+                "SELECT * FROM sales_entries WHERE id = ?",
+                (sale_id,),
+            ).fetchone()
+        self.assertEqual(sale["title"], "Updated market sale")
+        self.assertEqual(sale["sale_date"], "2026-04-08")
+        self.assertEqual(sale["amount_cents"], 3175)
+        self.assertEqual(sale["payment_method"], "card")
+        self.assertEqual(sale["notes"], "Adjusted after recount.")
+
     def test_admin_can_upload_expense_receipt(self):
         self.login_admin()
 

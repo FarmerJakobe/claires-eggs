@@ -35,6 +35,7 @@ from .store import (
     get_order,
     get_post,
     get_post_by_slug,
+    get_sales_entry,
     list_active_inventory,
     list_all_inventory,
     list_contact_messages,
@@ -50,6 +51,7 @@ from .store import (
     save_contact_message,
     save_post,
     sync_post_to_facebook,
+    update_sales_entry,
     update_inventory_item,
     update_order_payment,
     update_order_status,
@@ -385,6 +387,30 @@ def create_app() -> Flask:
             database.commit()
             flash("Sale logged.", "success")
         return redirect(url_for("admin_dashboard"))
+
+    @app.route("/admin/sales/<int:sale_id>/edit", methods=["GET", "POST"])
+    @admin_required
+    def admin_sales_edit(sale_id: int):
+        database = get_db()
+        sale = get_sales_entry(database, sale_id)
+        if not sale:
+            abort(404)
+
+        if request.method == "POST":
+            form_data = normalize_form(request.form)
+            try:
+                form_data["amount_cents"] = dollars_to_cents(form_data.get("amount", ""))
+                update_sales_entry(database, sale_id, form_data)
+            except (StoreError, ValueError) as exc:
+                database.rollback()
+                flash(str(exc), "error")
+            else:
+                database.commit()
+                flash("Sale entry updated.", "success")
+                return redirect(url_for("admin_dashboard"))
+            sale = get_sales_entry(database, sale_id)
+
+        return render_template("admin/sales_form.html", sale=sale)
 
     @app.route("/admin/expenses/new", methods=["POST"])
     @admin_required

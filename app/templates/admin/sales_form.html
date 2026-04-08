@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Sale | Claire's Eggs{% endblock %}
+
+{% block content %}
+  <section class="page-intro">
+    <p class="eyebrow">Sales log</p>
+    <h1>Edit sale entry</h1>
+    <p>Update the date, amount, payment type, or notes for this recorded sale.</p>
+  </section>
+
+  <section class="card">
+    <form class="stack-form" method="post">
+      <div class="form-grid">
+        <label>
+          Sale name
+          <input type="text" name="title" value="{{ sale.title }}" required>
+        </label>
+        <label>
+          Date
+          <input type="date" name="sale_date" value="{{ sale.sale_date }}" required>
+        </label>
+        <label>
+          Amount
+          <input
+            type="number"
+            name="amount"
+            min="0.01"
+            step="0.01"
+            value="{{ '%.2f'|format(sale.amount_cents / 100) }}"
+            required
+          >
+        </label>
+        <label>
+          Payment type
+          <select name="payment_method">
+            <option value="cash" {{ "selected" if sale.payment_method == "cash" else "" }}>Cash</option>
+            <option value="card" {{ "selected" if sale.payment_method == "card" else "" }}>Card</option>
+            <option value="other" {{ "selected" if sale.payment_method == "other" else "" }}>Other</option>
+          </select>
+        </label>
+      </div>
+      <label>
+        Notes
+        <textarea name="notes" rows="4">{{ sale.notes }}</textarea>
+      </label>
+      <div class="form-actions">
+        <a class="button button-secondary" href="{{ url_for('admin_dashboard') }}">Back to dashboard</a>
+        <button class="button button-primary" type="submit">Save changes</button>
+      </div>
+    </form>
+  </section>
+{% endblock %}
