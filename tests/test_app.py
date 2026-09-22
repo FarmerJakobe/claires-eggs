@@ -56,38 +56,6 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertIsNotNone(event)
         self.assertEqual(event["path"], "/")
 
-    def test_cash_order_reduces_inventory(self):
-        with self.app.app_context():
-            database = get_db()
-            item = database.execute(
-                "SELECT * FROM inventory_items ORDER BY id ASC LIMIT 1"
-            ).fetchone()
-            item_id = item["id"]
-            starting_quantity = item["quantity_available"]
-
-        response = self.client.post(
-            "/orders",
-            data={
-                "customer_name": "Test Customer",
-                "email": "test@example.com",
-                "phone": "555-1212",
-                "zip_code": "81416",
-                "pickup_type": "market",
-                "payment_method": "cash",
-                f"item_{item_id}": "2",
-            },
-            follow_redirects=True,
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Order confirmed", response.data)
-
-        with self.app.app_context():
-            database = get_db()
-            updated = database.execute(
-                "SELECT quantity_available FROM inventory_items WHERE id = ?",
-                (item_id,),
-            ).fetchone()
-        self.assertEqual(updated["quantity_available"], starting_quantity - 2)
 
     def test_next_pickup_rolls_after_wednesday_close(self):
         reference = datetime(2026, 3, 11, 16, 31, tzinfo=DENVER)
@@ -332,64 +300,7 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertIn(b"Pickup choice:</strong> Farm pickup", response.data)
         self.assertIn(b"Claire will contact you to arrange pickup.", response.data)
 
-    def test_order_rejects_zip_codes_outside_local_counties(self):
-        with self.app.app_context():
-            database = get_db()
-            item = database.execute(
-                "SELECT * FROM inventory_items ORDER BY id ASC LIMIT 1"
-            ).fetchone()
 
-        response = self.client.post(
-            "/orders",
-            data={
-                "customer_name": "Outside Customer",
-                "email": "outside@example.com",
-                "phone": "555-0000",
-                "zip_code": "80202",
-                "pickup_type": "market",
-                "payment_method": "cash",
-                f"item_{item['id']}": "1",
-            },
-            follow_redirects=True,
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b"Reservations are only available for Delta County or Montrose County ZIP codes.",
-            response.data,
-        )
-
-    def test_farm_pickup_order_shows_contact_follow_up(self):
-        with self.app.app_context():
-            database = get_db()
-            item = database.execute(
-                "SELECT * FROM inventory_items ORDER BY id ASC LIMIT 1"
-            ).fetchone()
-
-        response = self.client.post(
-            "/orders",
-            data={
-                "customer_name": "Farm Pickup Customer",
-                "email": "farm@example.com",
-                "phone": "555-7777",
-                "zip_code": "81416",
-                "pickup_type": "farm",
-                "payment_method": "cash",
-                f"item_{item['id']}": "1",
-            },
-            follow_redirects=True,
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Claire will contact you", response.data)
-
-        with self.app.app_context():
-            database = get_db()
-            order = database.execute(
-                "SELECT pickup_type, pickup_location, pickup_date, pickup_window FROM orders ORDER BY id DESC LIMIT 1"
-            ).fetchone()
-        self.assertEqual(order["pickup_type"], "farm")
-        self.assertEqual(order["pickup_location"], "Farm pickup")
-        self.assertEqual(order["pickup_date"], "")
-        self.assertEqual(order["pickup_window"], "Claire will contact you to arrange pickup.")
 
     def test_admin_can_post_notice_with_image(self):
         self.login_admin()
@@ -504,21 +415,14 @@ class ClaireEggsTestCase(unittest.TestCase):
             item_id = item["id"]
             starting_quantity = item["quantity_available"]
 
-        response = self.client.post(
-            "/orders",
-            data={
-                "customer_name": "Cancel Test",
-                "email": "cancel@example.com",
-                "phone": "555-8888",
-                "zip_code": "81416",
-                "pickup_type": "market",
-                "payment_method": "cash",
-                f"item_{item_id}": "1",
-            },
-            follow_redirects=False,
-        )
-        self.assertEqual(response.status_code, 302)
-        order_id = int(response.headers["Location"].split("/orders/")[1].split("/")[0])
+        # Seed an existing reservation directly; new public orders are retired.
+        from app.store import place_order
+        with self.app.app_context():
+            order_id = place_order(get_db(), {
+                "customer_name": "Cancel Test", "email": "cancel@example.com",
+                "phone": "555-8888", "zip_code": "81416", "pickup_type": "market",
+                "payment_method": "cash", f"item_{item_id}": "1",
+            })
 
         self.login_admin()
         response = self.client.post(
@@ -553,6 +457,44 @@ class ClaireEggsTestCase(unittest.TestCase):
         self.assertEqual(updated["quantity_available"], starting_quantity)
         self.assertEqual(movement["delta"], 1)
         self.assertIn("cancelled", movement["reason"])
+
+    def test_information_board_has_schedule_without_customer_forms(self):
+        response = self.client.get("/")
+        self.assertIn(b"Wednesdays", response.data)
+        self.assertIn(b"The Hitching Post", response.data)
+        self.assertIn(b"3:00 PM - 4:30 PM", response.data)
+        self.assertIn(b"News from Claire", response.data)
+        for retired in (b"Reserve Eggs", b"Current cartons", b"Stripe", b"<form", b'href="/orders"', b'href="/contact"'):
+            self.assertNotIn(retired, response.data)
+
+    def test_retired_links_return_to_board(self):
+        for path in ("/orders", "/contact"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.headers["Location"], "/")
+
+    def test_retired_submissions_cannot_write_records_or_reduce_stock(self):
+        with self.app.app_context():
+            database = get_db()
+            before = [database.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                      for table in ("orders", "contact_messages")]
+            stock_before = database.execute("SELECT SUM(quantity_available) FROM inventory_items").fetchone()[0]
+        for path in ("/orders", "/contact"):
+            response = self.client.post(path, data={"name": "Test", "email": "test@example.com", "phone": "555-1212", "message": "Test", "customer_name": "Test", "zip_code": "81416", "pickup_type": "market", "payment_method": "cash", "item_1": "1"})
+            self.assertEqual(response.status_code, 410)
+        with self.app.app_context():
+            database = get_db()
+            after = [database.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                     for table in ("orders", "contact_messages")]
+            self.assertEqual(before, after)
+            self.assertEqual(stock_before, database.execute("SELECT SUM(quantity_available) FROM inventory_items").fetchone()[0])
+
+    def test_retired_confirmation_does_not_show_customer_details(self):
+        order_id = self.create_test_order()
+        response = self.client.get(f"/orders/{order_id}/confirmation")
+        self.assertEqual(response.status_code, 410)
+        self.assertNotIn(b"test@example.com", response.data)
+        self.assertNotIn(b"checkout.stripe", response.data)
 
     def login_admin(self):
         response = self.client.post(

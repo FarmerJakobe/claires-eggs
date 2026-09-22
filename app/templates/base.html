@@ -6,7 +6,7 @@
     <title>{% block title %}Claire's Farm Eggs{% endblock %}</title>
     <meta
       name="description"
-      content="Reserve fresh farm eggs for Wednesday pickup at the Hitching Post in Crawford, or arrange farm pickup with Claire."
+      content="Fresh farm eggs in Crawford, Colorado. Find our Wednesday sales schedule at the Hitching Post and the latest announcements from Claire."
     >
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png', v='20260310h') }}" type="image/png">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
@@ -30,15 +30,13 @@
         </div>
         <nav class="site-nav">
           <a href="{{ url_for('home') }}">Home</a>
-          <a href="{{ url_for('orders') }}">Orders</a>
-          <a href="{{ url_for('news') }}">News</a>
-          <a href="{{ url_for('contact') }}">Contact</a>
+          <a href="{{ url_for('news') }}">Announcements</a>
           <a href="{{ url_for('admin_dashboard') if session.get('is_admin') else url_for('admin_login') }}">Admin</a>
         </nav>
       </header>
 
       <div class="ticker">
-        <span>Next market pickup:</span>
+        <span>Next scheduled egg stand:</span>
         <strong>{{ pickup_window.date_label }}</strong>
         <span>{{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</span>
         <span>Hitching Post, Crawford, Colorado</span>

@@ -22,7 +22,7 @@ from werkzeug.utils import secure_filename
 
 from .config import card_payments_enabled, load_config
 from .db import get_db, init_app as init_db
-from .payments import parse_stripe_webhook, refresh_payment_from_session
+from .payments import parse_stripe_webhook
 from .schedule import local_now, next_pickup_window
 from .store import (
     create_expense_receipt,
@@ -47,9 +47,7 @@ from .store import (
     list_recent_orders,
     list_sales_entries,
     list_visit_daily_totals,
-    place_order,
     record_website_visit,
-    save_contact_message,
     save_post,
     sync_post_to_facebook,
     update_sales_entry,
@@ -139,14 +137,10 @@ def create_app() -> Flask:
     @app.route("/")
     def home():
         database = get_db()
-        inventory = list_active_inventory(database)
         posts = list_posts(database, published_only=True)[:3]
-        total_cartons = sum(item["quantity_available"] for item in inventory)
         return render_template(
             "home.html",
-            inventory=inventory,
             posts=posts,
-            total_cartons=total_cartons,
         )
 
     @app.route("/healthz")
@@ -164,45 +158,15 @@ def create_app() -> Flask:
         )
 
     @app.route("/orders", methods=["GET", "POST"])
-    def orders():
-        database = get_db()
-        inventory = list_active_inventory(database)
+    @app.route("/contact", methods=["GET", "POST"])
+    def retired_customer_page():
         if request.method == "POST":
-            try:
-                order_id = place_order(database, request.form.to_dict())
-            except StoreError as exc:
-                flash(str(exc), "error")
-            except ValueError:
-                flash("Please enter valid quantities for each item.", "error")
-            else:
-                return redirect(url_for("order_confirmation", order_id=order_id))
-
-        return render_template("orders.html", inventory=inventory)
+            return render_template("retired.html"), 410
+        return redirect(url_for("home"), code=302)
 
     @app.route("/orders/<int:order_id>/confirmation")
-    def order_confirmation(order_id: int):
-        database = get_db()
-        session_id = request.args.get("session_id", "").strip()
-        if session_id:
-            try:
-                session_update = refresh_payment_from_session(session_id, app.config)
-            except Exception:
-                database.rollback()
-            else:
-                if session_update and session_update.order_id == order_id:
-                    update_order_payment(
-                        database,
-                        order_id,
-                        session_update.payment_status,
-                        session_update.stripe_reference,
-                        "" if session_update.payment_status == "paid_online" else session_update.checkout_url,
-                    )
-                    database.commit()
-
-        order_bundle = get_order(database, order_id)
-        if not order_bundle:
-            abort(404)
-        return render_template("order_confirmation.html", **order_bundle)
+    def retired_order_confirmation(order_id: int):
+        return render_template("retired.html"), 410
 
     @app.route("/webhooks/stripe", methods=["POST"])
     def stripe_webhook():
@@ -245,22 +209,6 @@ def create_app() -> Flask:
         if not post:
             abort(404)
         return render_template("news_detail.html", post=post)
-
-    @app.route("/contact", methods=["GET", "POST"])
-    def contact():
-        if request.method == "POST":
-            database = get_db()
-            try:
-                save_contact_message(database, request.form.to_dict())
-                database.commit()
-            except Exception:
-                database.rollback()
-                flash("We could not save your message. Try again.", "error")
-            else:
-                flash("Thanks. Claire will see your message on the admin dashboard.", "success")
-                return redirect(url_for("contact"))
-
-        return render_template("contact.html")
 
     @app.route("/admin/login", methods=["GET", "POST"])
     def admin_login():

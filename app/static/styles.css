@@ -708,3 +708,13 @@ fieldset {
     justify-items: start;
   }
 }
+
+/* Simple public information board. */
+.sale-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin: 1.5rem 0; padding: 1.3rem 0; border-block: 1px solid rgba(29,36,48,.12); }
+.sale-details strong { display: block; margin-top: .45rem; font-size: 1.3rem; }
+.sale-details p { margin: .35rem 0 0; }
+.schedule-note { font-size: .95rem; }
+.notice-board { scroll-margin-top: 1rem; }
+.notice-board .post-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 1.2rem; }
+@media (max-width: 480px) { .sale-details { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Claire's Eggs | Sales information{% endblock %}
+{% block content %}
+<section class="card page-intro">
+  <p class="eyebrow">Claire's Eggs</p>
+  <h1>Find us on Wednesday.</h1>
+  <p>Online orders and website messaging are closed. Visit our information board for the sales schedule and announcements.</p>
+  <a class="button button-primary" href="{{ url_for('home') }}">View the information board</a>
+</section>
+{% endblock %}

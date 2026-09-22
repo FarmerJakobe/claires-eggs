@@ -1,133 +1,41 @@
 {% extends "base.html" %}
-
-{% block title %}Claire's Eggs{% endblock %}
-
+{% block title %}Claire's Eggs | Fresh eggs in Crawford{% endblock %}
 {% block content %}
   <section class="hero">
     <div class="hero-copy">
-      <p class="eyebrow">Friendly small-farm freshness</p>
-      <h1>Claire's weekly egg stand, built around real stock instead of guesswork.</h1>
-      <p class="hero-text">
-        Claire updates cartons as eggs are gathered, neighbors reserve what is actually available,
-        and customers can choose Wednesday pickup at the Hitching Post in Crawford from 3 PM to 4:30 PM
-        or farm pickup with follow-up from Claire.
-      </p>
-      <div class="hero-actions">
-        <a class="button button-primary" href="{{ url_for('orders') }}">Reserve Eggs</a>
-        <a class="button button-secondary" href="{{ url_for('news') }}">Read Announcements</a>
+      <p class="eyebrow">Crawford, Colorado</p>
+      <h1>Fresh eggs.<br>See you Wednesday.</h1>
+      <p class="hero-text">Farm-fresh eggs from Claire's hens, right here in Crawford. Stop by the Hitching Post for your next dozen.</p>
+      <div class="sale-details" aria-label="Weekly egg sales">
+        <div><span class="metric-label">When</span><strong>Wednesdays</strong><p>{{ pickup_window.time_label }} {{ pickup_window.timezone_label }}</p></div>
+        <div><span class="metric-label">Where</span><strong>The Hitching Post</strong><p>Crawford, Colorado</p></div>
       </div>
-      <div class="hero-notes">
-        <div>
-          <span class="metric-label">Current cartons listed</span>
-          <strong>{{ total_cartons }}</strong>
-        </div>
-        <div>
-          <span class="metric-label">Payment options</span>
-          <strong>{{ "Cash or card" if card_payments_enabled else "Cash reservations" }}</strong>
-        </div>
-        <div>
-          <span class="metric-label">{{ "Card pricing" if card_payments_enabled else "Card checkout" }}</span>
-          <strong>{{ "10% fee shown upfront" if card_payments_enabled else "Turns on when live Stripe is connected" }}</strong>
-        </div>
-      </div>
+      <p class="schedule-note">Check the announcements below for changes to the regular schedule.</p>
+      <a class="button button-primary" href="#announcements">Farm announcements</a>
     </div>
-
     <div class="hero-art card">
-      <img
-        class="hero-logo"
-        src="{{ url_for('static', filename='images/claire-logo.png', v='20260310f') }}"
-        alt="Claire's Eggs official logo"
-      >
-      <div class="hero-sticker">
-        <span class="sticker-title">Happy hens. Honest eggs.</span>
-        <p>Website posts can be mirrored into Facebook from Claire's dashboard.</p>
-      </div>
+      <img class="hero-logo" src="{{ url_for('static', filename='images/claire-logo.png', v='20260310f') }}" alt="Claire's Eggs official logo">
+      <div class="hero-sticker"><span class="sticker-title">Happy hens. Honest eggs.</span><p>Farm-fresh eggs. A little local goodness.</p></div>
     </div>
   </section>
-
-  <section class="section-grid">
-    <article class="card card-warm">
-      <p class="eyebrow">What Claire sells</p>
-      <h2>Farm eggs packed for pickup, not shipping.</h2>
-      <p>
-        This site is for local pickup only. Customers can choose the upcoming Wednesday market window
-        or request farm pickup and wait for Claire to confirm the details directly.
-      </p>
-    </article>
-    <article class="card card-cool">
-      <p class="eyebrow">The system</p>
-      <h2>First come, first served with live stock updates.</h2>
-      <p>
-        {% if card_payments_enabled %}
-          Cash orders act as reservations. Card orders calculate the extra 10% fee automatically. Either way,
-          once a customer checks out, those cartons are taken out of available inventory immediately.
-        {% else %}
-          Cash orders act as reservations and remove cartons from live inventory right away. Card checkout is
-          wired for Stripe and will be switched on once Claire's live account is connected.
-        {% endif %}
-      </p>
-    </article>
-  </section>
-
-  <section class="section-grid">
-    <article class="card">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Current stock</p>
-          <h2>Available now</h2>
-        </div>
-        <a class="text-link" href="{{ url_for('orders') }}">Open orders page</a>
-      </div>
-      <div class="inventory-list">
-        {% for item in inventory %}
-          <div class="inventory-card">
-            <div>
-              <h3>{{ item.name }}</h3>
-              <p>{{ item.description }}</p>
-            </div>
-            <div class="inventory-meta">
-              <strong>{{ item.price_cents|money }}</strong>
-              <span>{{ item.quantity_available }} left</span>
-            </div>
-          </div>
-        {% else %}
-          <p>No cartons are listed right now.</p>
-        {% endfor %}
-      </div>
-    </article>
-
-    <article class="card card-illustrated">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Notice board</p>
-          <h2>Fresh from Claire's farm</h2>
-        </div>
-        <a class="text-link" href="{{ url_for('news') }}">All news</a>
-      </div>
-      <div class="post-list compact">
-        {% for post in posts %}
-          <a class="post-card" href="{{ url_for('news_detail', slug=post.slug) }}">
-            {% if post.image_stored_name %}
-              <img
-                class="section-illustration"
-                src="{{ url_for('post_image_file', stored_name=post.image_stored_name) }}"
-                alt="{{ post.title }}"
-              >
-            {% else %}
-              <img
-                class="section-illustration"
-                src="{{ url_for('static', filename='images/hitching-post.png', v='20260310g') }}"
-                alt="Claire's Eggs stand at the Hitching Post in Crawford"
-              >
-            {% endif %}
-            <span class="post-date">{{ post.published_at[:10] if post.published_at else post.created_at[:10] }}</span>
-            <h3>{{ post.title }}</h3>
-            <p>{{ post.excerpt }}</p>
-          </a>
-        {% else %}
-          <p>No news posted yet.</p>
-        {% endfor %}
-      </div>
-    </article>
+  <section id="announcements" class="card notice-board">
+    <div class="section-heading">
+      <div><p class="eyebrow">The notice board</p><h2>News from Claire's farm</h2></div>
+      <a class="text-link" href="{{ url_for('news') }}">All announcements</a>
+    </div>
+    <div class="post-list compact">
+      {% for post in posts %}
+        <a class="post-card" href="{{ url_for('news_detail', slug=post.slug) }}">
+          {% if post.image_stored_name %}
+            <img class="section-illustration" src="{{ url_for('post_image_file', stored_name=post.image_stored_name) }}" alt="{{ post.title }}" loading="lazy">
+          {% endif %}
+          <span class="post-date">{{ post.published_at[:10] if post.published_at else post.created_at[:10] }}</span>
+          <h3>{{ post.title }}</h3><p>{{ post.excerpt }}</p>
+          <span class="text-link">Read announcement</span>
+        </a>
+      {% else %}
+        <p>No announcements yet. Check back here for updates from the farm.</p>
+      {% endfor %}
+    </div>
   </section>
 {% endblock %}

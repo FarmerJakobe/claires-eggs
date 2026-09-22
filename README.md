@@ -1,16 +1,15 @@
-# Claire's Farm Eggs Prototype
+# Claire's Eggs information board
 
-Local-first prototype for Claire's egg sales website. The app manages inventory, first-come-first-served orders, cash reservations, card checkout pricing, weekly pickup rules, news posts, and contact messages.
+The public site shows the Wednesday egg stand schedule and farm announcements.
+Online reservations, checkout, and contact forms have been retired. Old `/orders`
+and `/contact` links redirect to the board; submissions and old confirmation pages
+return HTTP 410. Existing records and private admin tools remain available, including
+announcement publishing, sales records, and handling historical orders. Stripe
+webhooks remain available to reconcile any historical payments.
 
-## Features
-
-- Public pages for home, orders, news, and contact
-- Admin dashboard for inventory, order status, and news publishing
-- SQLite storage with seeded demo inventory and a sample announcement
-- Wednesday pickup scheduling for Crawford, Colorado from 3:00 PM to 4:00 PM America/Denver
-- Cash reservations and card orders with a 10% card processing fee
-- Stripe-ready payment adapter with offline demo mode
-- Facebook publishing queue with offline demo sync
+Contact details are intentionally omitted until the family supplies the information
+they want published. The existing schedule is Wednesday, 3:00-4:30 PM, at the
+Hitching Post in Crawford, Colorado.
 
 ## Run locally
 
